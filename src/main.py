@@ -110,18 +110,20 @@ def display_nutrition_only(result: dict) -> None:
         
         if meal.food_items:
             # Header
-            print(f"{'Food Item':<30} {'Protein':>10} {'Carbs':>10} {'Fats':>10} {'Calories':>10}")
-            print("-" * 70)
+            print(f"{'Food Item':<28} {'Protein':>8} {'Carbs':>8} {'Fats':>7} {'Fiber':>7} {'Cal':>7}")
+            print("-" * 80)
             
             # Each food item
             for item in meal.food_items:
-                name = item.name[:28] + ".." if len(item.name) > 30 else item.name
-                print(f"{name:<30} {item.protein_g:>9.1f}g {item.carbs_g:>9.1f}g {item.fats_g:>9.1f}g {item.calories:>10.0f}")
+                name = item.name[:26] + ".." if len(item.name) > 28 else item.name
+                fiber = getattr(item, 'fiber_g', 0) or 0
+                print(f"{name:<28} {item.protein_g:>7.1f}g {item.carbs_g:>7.1f}g {item.fats_g:>6.1f}g {fiber:>6.1f}g {item.calories:>6.0f}")
             
-            print("-" * 70)
+            print("-" * 80)
             # Meal subtotal
             m = meal.total_macros
-            print(f"{'MEAL TOTAL':<30} {m.protein_g:>9.1f}g {m.carbs_g:>9.1f}g {m.fats_g:>9.1f}g {m.calories:>10.0f}")
+            fiber_total = getattr(m, 'fiber_g', 0) or sum(getattr(i, 'fiber_g', 0) or 0 for i in meal.food_items)
+            print(f"{'MEAL TOTAL':<28} {m.protein_g:>7.1f}g {m.carbs_g:>7.1f}g {m.fats_g:>6.1f}g {fiber_total:>6.1f}g {m.calories:>6.0f}")
         
         # Health score
         print(f"\n  ⭐ Health Score: {meal.health_score:.1f}/10")
