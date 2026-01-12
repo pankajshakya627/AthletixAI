@@ -132,6 +132,64 @@ classDiagram
     DailyWorkout "1" *-- "10-15" Exercise
 ```
 
+### 2.4 Research Models
+
+```mermaid
+classDiagram
+    class ExerciseResource {
+        +str exercise_name
+        +Optional~str~ tutorial_url
+        +Optional~str~ gif_url
+        +Optional~str~ video_url
+        +List~str~ image_urls
+        +Optional~str~ breathing_guide
+        +List~str~ common_mistakes
+        +str source
+        +float confidence_score
+        +datetime cached_at
+    }
+
+    class ResearchResults {
+        +dict~str,ExerciseResource~ exercises
+        +datetime search_timestamp
+        +get_resource(name) Optional~ExerciseResource~
+    }
+
+    ResearchResults "1" *-- "*" ExerciseResource
+```
+
+### 2.5 Memory Models
+
+```mermaid
+classDiagram
+    class UserMemory {
+        +Client supabase
+        +is_enabled() bool
+        +save_user_profile(profile) str
+        +load_user_profile(user_id) UserProfile
+        +save_training_program(user_id, program) str
+        +get_active_program(user_id) TrainingProgram
+        +cache_exercise_resource(resource) void
+        +get_cached_exercise_resource(name) ExerciseResource
+        +get_workout_history(user_id, limit) list
+    }
+
+    class SessionCache {
+        +dict cache
+        +str session_id
+        +Optional~str~ user_id
+        +datetime created_at
+        +set(key, value) void
+        +get(key, default) Any
+        +update(data) void
+        +clear() void
+        +to_dict() dict
+    }
+
+    UserMemory --> "uses" Supabase
+    SessionCache --> "stores" State
+```
+
 ---
 
 ## 3. State Management
@@ -167,7 +225,7 @@ classDiagram
 
 ### 4.1 Agent Interface Pattern
 
-```mermaid
+````mermaid
 classDiagram
     class AgentNode {
         <<interface>>
@@ -197,9 +255,109 @@ classDiagram
     AgentNode <|.. OrchestratorNode
     AgentNode <|.. NutritionAgentNode
     AgentNode <|.. PlannerAgentNode
+```mermaid
+classDiagram
+    class FitnessState {
+        <<TypedDict>>
+        +UserProfile user_profile
+        +FoodPreferences food_preferences
+        +FitnessGoals goals
+        +List~str~ video_frames
+        +List~str~ food_images
+        +dict wearable_data
+        +MovementAssessment movement_assessment
+        +WearableMetrics wearable_metrics
+        +NutritionAnalysis nutrition_analysis
+        +ResearchResults exercise_resources
+        +TrainingProgram program
+        +WeeklyFeedback weekly_feedback
+        +str coaching_message
+        +List~str~ daily_tips
+        +str current_agent
+        +bool needs_replan
+        +List~dict~ messages
+        +str session_id
+        +List~dict~ user_history
+        +str thread_id
+    }
+````
+
+---
+
+## 4. Agent Implementations
+
+### 4.1 Agent Interface Pattern
+
+```mermaid
+classDiagram
+    class AgentNode {
+        <<interface>>
+        +__call__(state: FitnessState) dict
+    }
+
+    class OrchestratorNode {
+        +__call__(state) dict
+        -validate_inputs()
+        -log_summary()
+    }
+
+    class ResearchAgentNode {
+        +__call__(state) dict
+        -extract_exercise_names()
+        -search_exercise_resources(name)
+        -check_cache()
+        -parse_results()
+    }
+
+    class NutritionAgentNode {
+        +__call__(state) dict
+        -analyze_image(image)
+        -parse_response(json)
+        -calculate_totals()
+    }
+
+    class PlannerAgentNode {
+        +__call__(state) dict
+        -build_prompt()
+        -parse_program(json)
+        -enrich_program_with_resources()
+        -create_default_program()
+    }
+
+    AgentNode <|.. OrchestratorNode
+    AgentNode <|.. ResearchAgentNode
+    AgentNode <|.. NutritionAgentNode
+    AgentNode <|.. PlannerAgentNode
 ```
 
-### 4.2 Nutrition Agent Sequence
+### 4.2 Research Agent Sequence
+
+```mermaid
+sequenceDiagram
+    participant P as Planner
+    participant R as ResearchAgent
+    participant C as Supabase Cache
+    participant T as Tavily API
+
+    P->>R: Exercise names
+    loop For each exercise
+        R->>C: Check cache
+        alt Cache hit (< 30 days)
+            C-->>R: ExerciseResource
+        else Cache miss
+            R->>T: Search tutorial
+            R->>T: Search video
+            R->>T: Search GIF
+            T-->>R: Results
+            R->>R: Parse & filter URLs
+            R->>C: Cache resource (30d TTL)
+        end
+    end
+    R-->>P: ResearchResults
+    P->>P: Enrich program with URLs
+```
+
+### 4.3 Nutrition Agent Sequence
 
 ```mermaid
 sequenceDiagram
@@ -258,7 +416,8 @@ flowchart LR
         O --> CV[cv_agent]
         CV --> W[wearable_agent]
         W --> N[nutrition_agent]
-        N --> P[planner_agent]
+        N --> R[research_agent]
+        R --> P[planner_agent]
         P --> C[coach_agent]
         C --> A[adaptation_agent]
         A --> D{should_replan?}
@@ -278,6 +437,7 @@ def create_fitness_graph() -> StateGraph:
     graph.add_node("cv_agent", cv_agent_node)
     graph.add_node("wearable_agent", wearable_agent_node)
     graph.add_node("nutrition_agent", nutrition_agent_node)
+    graph.add_node("research_agent", research_agent_node)  # NEW
     graph.add_node("planner_agent", planner_agent_node)
     graph.add_node("coach_agent", coach_agent_node)
     graph.add_node("adaptation_agent", adaptation_agent_node)
@@ -286,7 +446,8 @@ def create_fitness_graph() -> StateGraph:
     graph.add_edge("orchestrator", "cv_agent")
     graph.add_edge("cv_agent", "wearable_agent")
     graph.add_edge("wearable_agent", "nutrition_agent")
-    graph.add_edge("nutrition_agent", "planner_agent")
+    graph.add_edge("nutrition_agent", "research_agent")  # NEW
+    graph.add_edge("research_agent", "planner_agent")    # NEW
     graph.add_edge("planner_agent", "coach_agent")
     graph.add_edge("coach_agent", "adaptation_agent")
 
@@ -464,6 +625,7 @@ src/
 │   ├── cv_agent.py         # Video frame analysis
 │   ├── wearable_agent.py   # Device data interpretation
 │   ├── nutrition_agent.py  # Food image → macros
+│   ├── research_agent.py   # Exercise resource search (Tavily)
 │   ├── planner_agent.py    # 5-day program generation
 │   ├── coach_agent.py      # Motivational messaging
 │   └── adaptation_agent.py # Feedback loop logic
@@ -473,9 +635,12 @@ src/
 │   ├── wearables.py        # WearableMetrics
 │   ├── nutrition.py        # FoodItem, MealAnalysis
 │   ├── program.py          # TrainingProgram, Exercise
+│   ├── research.py         # ExerciseResource, ResearchResults
+│   ├── session.py          # WorkoutSession, SessionSummary
 │   └── feedback.py         # WeeklyFeedback
 ├── memory/
-│   ├── session_memory.py   # In-memory session state
+│   ├── user_memory.py      # Supabase integration
+│   ├── session_cache.py    # In-memory session state
 │   └── persistence.py      # SQLite storage
 ├── safety/
 │   ├── validators.py       # Input validation functions

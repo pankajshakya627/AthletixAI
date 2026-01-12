@@ -4,12 +4,12 @@
 
 **AthletixAI** is a multi-agent AI fitness coaching system that provides personalized training programs, nutrition analysis, and adaptive coaching using LangGraph orchestration and OpenAI GPT-4o.
 
-| Attribute          | Value                               |
-| ------------------ | ----------------------------------- |
-| Architecture Style | Event-driven Multi-Agent System     |
-| Orchestration      | LangGraph StateGraph                |
-| AI Provider        | OpenAI (GPT-4o, GPT-4o Vision)      |
-| Data Store         | SQLite (Local), PostgreSQL (Future) |
+| Attribute          | Value                                    |
+| ------------------ | ---------------------------------------- |
+| Architecture Style | Event-driven Multi-Agent System          |
+| Orchestration      | LangGraph StateGraph                     |
+| AI Provider        | OpenAI (GPT-4o, GPT-4o Vision), Tavily   |
+| Data Store         | Supabase (PostgreSQL), SQLite (Fallback) |
 
 ---
 
@@ -111,15 +111,16 @@ stateDiagram-v2
 
 ### 4.2 Agent Specifications
 
-| Agent            | Type          | LLM           | Responsibility                     |
-| ---------------- | ------------- | ------------- | ---------------------------------- |
-| Orchestrator     | Deterministic | None          | Input validation, routing          |
-| CV Agent         | AI            | GPT-4o Vision | Exercise form analysis             |
-| Wearable Agent   | AI            | GPT-4o        | Recovery metrics interpretation    |
-| Nutrition Agent  | AI            | GPT-4o Vision | Food → macro calculation           |
-| Planner Agent    | AI            | GPT-4o        | Training program generation        |
-| Coach Agent      | AI            | GPT-4o        | Human-like coaching messages       |
-| Adaptation Agent | Deterministic | None          | Feedback analysis, replan decision |
+| Agent              | Type          | LLM            | Responsibility                              |
+| ------------------ | ------------- | -------------- | ------------------------------------------- |
+| Orchestrator       | Deterministic | None           | Input validation, routing                   |
+| CV Agent           | AI            | GPT-4o Vision  | Exercise form analysis                      |
+| Wearable Agent     | AI            | GPT-4o         | Recovery metrics interpretation             |
+| Nutrition Agent    | AI            | GPT-4o Vision  | Food → macro calculation                    |
+| **Research Agent** | **AI**        | **Tavily API** | **Exercise tutorials, GIFs, videos search** |
+| Planner Agent      | AI            | GPT-4o         | Training program generation                 |
+| Coach Agent        | AI            | GPT-4o         | Human-like coaching messages                |
+| Adaptation Agent   | Deterministic | None           | Feedback analysis, replan decision          |
 
 ---
 
@@ -182,6 +183,54 @@ flowchart LR
     PRS -.->|On Error| DEF --> PGM
 ```
 
+### 5.3 Exercise Research Pipeline
+
+```mermaid
+flowchart TB
+    subgraph Input
+        EXERCISES[Exercise Names]
+    end
+
+    subgraph Cache["Supabase Cache"]
+        CHECK{Check Cache}
+        CACHED[(30-day TTL)]
+    end
+
+    subgraph Search["Tavily Search"]
+        Q1[Tutorial Query]
+        Q2[Video Query]
+        Q3[GIF Query]
+        TAVILY[Tavily API]
+    end
+
+    subgraph Processing
+        FILTER[Filter Results]
+        PARSE[Parse URLs]
+    end
+
+    subgraph Output
+        RESOURCE[ExerciseResource]
+        TUTORIAL[tutorial_url]
+        VIDEO[video_url]
+        GIF[gif_url]
+        IMAGES[image_urls]
+    end
+
+    EXERCISES --> CHECK
+    CHECK -->|Hit| CACHED --> RESOURCE
+    CHECK -->|Miss| Q1
+    Q1 --> TAVILY
+    Q2 --> TAVILY
+    Q3 --> TAVILY
+    TAVILY --> FILTER --> PARSE
+    PARSE --> RESOURCE
+    RESOURCE --> TUTORIAL
+    RESOURCE --> VIDEO
+    RESOURCE --> GIF
+    RESOURCE --> IMAGES
+    RESOURCE -.->|Cache 30d| CACHED
+```
+
 ---
 
 ## 6. Technology Stack
@@ -193,14 +242,22 @@ mindmap
       LangGraph
       StateGraph
       Conditional Edges
+      Checkpoints
     AI/ML
       OpenAI GPT-4o
       GPT-4o Vision
+      Tavily Search
       Structured Output
     Data
       Pydantic v2
       TypedDict
-      SQLite
+      Supabase PostgreSQL
+      SQLite Fallback
+    Memory
+      Long-term Supabase
+      Short-term Cache
+      Exercise Resources
+      Workout History
     Safety
       Input Validators
       Volume Caps

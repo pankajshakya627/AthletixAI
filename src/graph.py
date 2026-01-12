@@ -7,6 +7,7 @@ from src.agents.orchestrator import orchestrator_node
 from src.agents.cv_agent import cv_agent_node
 from src.agents.wearable_agent import wearable_agent_node
 from src.agents.nutrition_agent import nutrition_agent_node
+from src.agents.research_agent import research_agent_node  # NEW
 from src.agents.planner_agent import planner_agent_node
 from src.agents.coach_agent import coach_agent_node
 from src.agents.adaptation_agent import adaptation_agent_node, should_replan
@@ -18,7 +19,7 @@ def create_fitness_graph() -> StateGraph:
     
     Graph Topology:
         orchestrator → cv_agent → wearable_agent → nutrition_agent 
-        → planner_agent → coach_agent → adaptation_agent
+        → research_agent → planner_agent → coach_agent → adaptation_agent
         → (conditional: back to planner_agent if needs_replan, else END)
     
     Returns:
@@ -32,6 +33,7 @@ def create_fitness_graph() -> StateGraph:
     graph.add_node("cv_agent", cv_agent_node)
     graph.add_node("wearable_agent", wearable_agent_node)
     graph.add_node("nutrition_agent", nutrition_agent_node)
+    graph.add_node("research_agent", research_agent_node)  # NEW
     graph.add_node("planner_agent", planner_agent_node)
     graph.add_node("coach_agent", coach_agent_node)
     graph.add_node("adaptation_agent", adaptation_agent_node)
@@ -43,7 +45,8 @@ def create_fitness_graph() -> StateGraph:
     graph.add_edge("orchestrator", "cv_agent")
     graph.add_edge("cv_agent", "wearable_agent")
     graph.add_edge("wearable_agent", "nutrition_agent")
-    graph.add_edge("nutrition_agent", "planner_agent")
+    graph.add_edge("nutrition_agent", "research_agent")  # NEW
+    graph.add_edge("research_agent", "planner_agent")    # NEW
     graph.add_edge("planner_agent", "coach_agent")
     graph.add_edge("coach_agent", "adaptation_agent")
     

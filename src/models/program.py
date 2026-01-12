@@ -66,6 +66,32 @@ class Exercise(BaseModel):
         default=None,
         description="Additional exercise notes"
     )
+    
+    # NEW: Educational resources from research agent
+    tutorial_url: Optional[str] = Field(
+        default=None,
+        description="URL to tutorial or guide"
+    )
+    gif_url: Optional[str] = Field(
+        default=None,
+        description="URL to animated GIF demonstration"
+    )
+    video_url: Optional[str] = Field(
+        default=None,
+        description="URL to video tutorial (YouTube, etc.)"
+    )
+    image_urls: list[str] = Field(
+        default_factory=list,
+        description="URLs to reference images showing proper form"
+    )
+    breathing_guide: Optional[str] = Field(
+        default=None,
+        description="Instructions for breathing during the exercise"
+    )
+    common_mistakes: list[str] = Field(
+        default_factory=list,
+        description="Common mistakes to avoid"
+    )
 
 
 class DailyWorkout(BaseModel):
