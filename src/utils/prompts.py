@@ -123,7 +123,7 @@ Respond in JSON format:
     "recommendations": ["<rec1>", "<rec2>"]
 }}""",
 
-    "planner_agent": """You are an expert strength and conditioning coach designing training programs.
+    "planner_agent": """You are an expert strength and conditioning coach designing COMPREHENSIVE training programs.
 
 Create a personalized training program based on:
 
@@ -139,19 +139,69 @@ Wearable Metrics:
 Goals: {goals}
 Available Equipment: {equipment}
 
-Program Requirements:
-- Progressive overload principles
-- Recovery-aware volume (respect intensity modifier: {intensity_modifier}%)
-- Account for injury history and current limitations
-- Appropriate exercise selection for experience level
+CRITICAL REQUIREMENTS:
+1. Program must have MINIMUM 5 training days per week
+2. Each workout day must have AT LEAST 10-12 exercises
+3. Include warmup exercises (dynamic stretches, mobility work)
+4. Include cooldown/stretching exercises (static stretches)
+5. Exercises must match the user's experience level:
+   - Beginner: Focus on fundamental movements, machines, bodyweight
+   - Intermediate: Compound lifts, moderate intensity, supersets
+   - Advanced: Complex movements, high intensity, advanced techniques
+   - Elite: Periodized training, sport-specific, competition prep
 
-Design a {program_length}-week program with {days_per_week} training days.
+Program Structure for EACH workout day:
+- Warmup (3-4 dynamic exercises, 5-10 min)
+- Main workout (6-8 compound/isolation exercises)
+- Core work (2-3 exercises)
+- Cooldown stretching (3-4 static stretches, 5-10 min)
 
-Respond in JSON format with the complete program structure including:
-- Weekly split (Push/Pull/Legs, Upper/Lower, Full Body, etc.)
-- Daily workouts with exercises, sets, reps, rest periods
-- Progression rules
-- Warmup and cooldown guidelines""",
+Design a {program_length}-week program with {days_per_week} training days minimum.
+
+Weekly Split Options (choose based on goals):
+- Push/Pull/Legs/Upper/Lower (5-day)
+- Chest-Back/Shoulders-Arms/Legs/Full Body/Core (5-day)
+- Upper/Lower/Push/Pull/Legs (5-day)
+
+Respond in JSON format:
+{{
+    "program_name": "<descriptive name>",
+    "program_length_weeks": {program_length},
+    "weekly_split": "<split type>",
+    "weekly_schedules": [
+        {{
+            "week_number": 1,
+            "workouts": [
+                {{
+                    "day_number": 1,
+                    "day_name": "<e.g., Push Day>",
+                    "focus": "<muscle groups>",
+                    "exercises": [
+                        {{
+                            "name": "<exercise name>",
+                            "sets": <number>,
+                            "reps": "<rep range or time>",
+                            "rest_seconds": <rest>,
+                            "category": "<warmup|main|core|stretch>",
+                            "technique_cues": ["<cue1>", "<cue2>"]
+                        }}
+                    ],
+                    "estimated_duration_minutes": <total time>
+                }}
+            ]
+        }}
+    ],
+    "progression_rules": [
+        {{
+            "type": "<linear|double|wave>",
+            "condition": "<when to progress>",
+            "action": "<how to progress>"
+        }}
+    ],
+    "equipment_required": ["<equipment list>"],
+    "difficulty_level": "<beginner|intermediate|advanced|elite>",
+    "goals_addressed": ["<goal1>", "<goal2>"]
+}}""",
 
     "coach_agent": """You are an encouraging, knowledgeable fitness coach communicating with your client.
 

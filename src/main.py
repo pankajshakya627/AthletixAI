@@ -57,6 +57,148 @@ def load_wearable_data(wearable_path: Optional[str]) -> Optional[dict]:
 
 
 # ============================================================
+# INTERACTIVE PROFILE CREATION
+# ============================================================
+
+def create_profile_interactive() -> UserProfile:
+    """
+    Interactively prompt user for profile information.
+    
+    Returns:
+        UserProfile created from user input
+    """
+    from src.models.user_profile import Gender, ExperienceLevel
+    import uuid
+    
+    print("\n" + "=" * 60)
+    print("📋 CREATE YOUR FITNESS PROFILE")
+    print("=" * 60 + "\n")
+    
+    # Name
+    name = input("👤 What's your name? ").strip()
+    if not name:
+        name = "User"
+    
+    # Age
+    while True:
+        try:
+            age = int(input("🎂 Your age: "))
+            if 13 <= age <= 100:
+                break
+            print("   Please enter an age between 13-100")
+        except ValueError:
+            print("   Please enter a valid number")
+    
+    # Gender
+    print("\n🚻 Gender:")
+    print("   1. Male")
+    print("   2. Female")
+    print("   3. Other")
+    gender_choice = input("   Choose (1-3): ").strip()
+    gender_map = {"1": Gender.MALE, "2": Gender.FEMALE, "3": Gender.OTHER}
+    gender = gender_map.get(gender_choice, Gender.OTHER)
+    
+    # Height
+    while True:
+        try:
+            height = float(input("\n📏 Height in cm (e.g., 175): "))
+            if 100 <= height <= 250:
+                break
+            print("   Please enter height between 100-250 cm")
+        except ValueError:
+            print("   Please enter a valid number")
+    
+    # Weight
+    while True:
+        try:
+            weight = float(input("⚖️  Weight in kg (e.g., 70): "))
+            if 30 <= weight <= 300:
+                break
+            print("   Please enter weight between 30-300 kg")
+        except ValueError:
+            print("   Please enter a valid number")
+    
+    # Experience level
+    print("\n💪 Training Experience:")
+    print("   1. Beginner (0-1 year)")
+    print("   2. Intermediate (1-3 years)")
+    print("   3. Advanced (3-5 years)")
+    print("   4. Elite (5+ years)")
+    exp_choice = input("   Choose (1-4): ").strip()
+    exp_map = {
+        "1": ExperienceLevel.BEGINNER,
+        "2": ExperienceLevel.INTERMEDIATE,
+        "3": ExperienceLevel.ADVANCED,
+        "4": ExperienceLevel.ELITE
+    }
+    experience = exp_map.get(exp_choice, ExperienceLevel.BEGINNER)
+    
+    # Equipment (optional)
+    print("\n🏋️ Available Equipment (comma-separated, or press Enter to skip):")
+    print("   Examples: dumbbells, barbell, pull_up_bar, bench, cables")
+    equipment_input = input("   Equipment: ").strip()
+    equipment = [e.strip() for e in equipment_input.split(",") if e.strip()] if equipment_input else []
+    
+    # Injuries (optional)
+    print("\n⚠️  Any past injuries or current issues? (comma-separated, or press Enter to skip)")
+    print("   Examples: lower back, knee, shoulder")
+    injury_input = input("   Injuries: ").strip()
+    injuries = [i.strip() for i in injury_input.split(",") if i.strip()] if injury_input else []
+    
+    # Create profile
+    profile = UserProfile(
+        user_id=str(uuid.uuid4())[:8],
+        name=name,
+        age=age,
+        gender=gender,
+        height_cm=height,
+        weight_kg=weight,
+        experience_level=experience,
+        equipment_available=equipment,
+        injury_history=injuries,
+    )
+    
+    print("\n✅ Profile created successfully!")
+    print(f"   Name: {name}, Age: {age}, BMI: {profile.bmi}")
+    print("-" * 60)
+    
+    return profile
+
+
+def get_user_profile_choice() -> tuple[str, Optional[UserProfile]]:
+    """
+    Ask user whether to use sample profile or create new one.
+    
+    Returns:
+        Tuple of (choice, optional_profile)
+        - "sample": Use sample_user.json
+        - "interactive": Profile created interactively
+        - "file": User specified their own file path
+    """
+    print("\n" + "=" * 60)
+    print("🏃 ATHLETIX AI - Fitness Coach")
+    print("=" * 60)
+    print("\n📋 User Profile Options:")
+    print("   1. Use sample profile (sample_user.json)")
+    print("   2. Create new profile (answer a few questions)")
+    print("   3. Specify profile file path")
+    
+    choice = input("\nChoose option (1-3): ").strip()
+    
+    if choice == "1":
+        return ("sample", None)
+    elif choice == "2":
+        profile = create_profile_interactive()
+        return ("interactive", profile)
+    elif choice == "3":
+        file_path = input("Enter path to profile JSON: ").strip()
+        return ("file", file_path)
+    else:
+        print("Invalid choice, using sample profile...")
+        return ("sample", None)
+
+
+# ============================================================
 # NUTRITION ONLY MODE
 # ============================================================
 
@@ -237,6 +379,71 @@ def display_program_only(state: dict) -> None:
                     print(f"        - {ex.name}: {ex.sets}x{ex.reps}")
     
     print("\n" + "=" * 70 + "\n")
+
+
+def run_program_with_profile(
+    user_profile: UserProfile,
+    goals_path: Optional[str] = None,
+    wearable_path: Optional[str] = None,
+) -> dict:
+    """Run program generation with a UserProfile object directly."""
+    load_dotenv()
+    
+    from src.agents.orchestrator import orchestrator_node
+    from src.agents.cv_agent import cv_agent_node
+    from src.agents.wearable_agent import wearable_agent_node
+    from src.agents.planner_agent import planner_agent_node
+    from src.agents.coach_agent import coach_agent_node
+    
+    logger.info(f"Running program for: {user_profile.name}")
+    
+    goals = load_goals(goals_path)
+    wearable_data = load_wearable_data(wearable_path)
+    
+    state = create_initial_state(user_profile=user_profile, goals=goals)
+    state["wearable_data"] = wearable_data
+    
+    state.update(orchestrator_node(state))
+    state.update(cv_agent_node(state))
+    state.update(wearable_agent_node(state))
+    state.update(planner_agent_node(state))
+    state.update(coach_agent_node(state))
+    
+    return state
+
+
+def run_full_with_profile(
+    user_profile: UserProfile,
+    food_prefs_path: Optional[str] = None,
+    goals_path: Optional[str] = None,
+    wearable_path: Optional[str] = None,
+    food_images: Optional[list[str]] = None,
+    video_frames: Optional[list[str]] = None,
+) -> dict:
+    """Run full fitness coach with a UserProfile object directly."""
+    load_dotenv()
+    
+    logger.info(f"Running full coach for: {user_profile.name}")
+    
+    food_preferences = load_food_preferences(food_prefs_path)
+    goals = load_goals(goals_path)
+    wearable_data = load_wearable_data(wearable_path)
+    
+    initial_state = create_initial_state(
+        user_profile=user_profile,
+        food_preferences=food_preferences,
+        goals=goals,
+    )
+    
+    if wearable_data:
+        initial_state["wearable_data"] = wearable_data
+    if food_images:
+        initial_state["food_images"] = food_images
+    if video_frames:
+        initial_state["video_frames"] = video_frames
+    
+    graph = get_compiled_graph()
+    return graph.invoke(initial_state)
 
 
 # ============================================================
@@ -426,8 +633,22 @@ Examples:
         
         # PROGRAM ONLY MODE
         elif args.program_only:
+            # Get profile interactively if not provided
             if not args.profile:
-                parser.error("--program-only requires --profile")
+                choice, profile_data = get_user_profile_choice()
+                if choice == "sample":
+                    args.profile = "sample_user.json"
+                elif choice == "interactive":
+                    # Run with interactive profile directly
+                    result = run_program_with_profile(
+                        user_profile=profile_data,
+                        goals_path=args.goals,
+                        wearable_path=args.wearable,
+                    )
+                    display_program_only(result)
+                    return
+                elif choice == "file":
+                    args.profile = profile_data
             
             result = run_program_generation(
                 profile_path=args.profile,
@@ -438,8 +659,25 @@ Examples:
         
         # FULL MODE
         else:
+            # Get profile interactively if not provided
             if not args.profile:
-                parser.error("Full mode requires --profile")
+                choice, profile_data = get_user_profile_choice()
+                if choice == "sample":
+                    args.profile = "sample_user.json"
+                elif choice == "interactive":
+                    # Run with interactive profile directly
+                    result = run_full_with_profile(
+                        user_profile=profile_data,
+                        food_prefs_path=args.food_prefs,
+                        goals_path=args.goals,
+                        wearable_path=args.wearable,
+                        food_images=args.food_images,
+                        video_frames=args.video_frames,
+                    )
+                    display_results(result)
+                    return
+                elif choice == "file":
+                    args.profile = profile_data
             
             result = run_fitness_coach(
                 profile_path=args.profile,
