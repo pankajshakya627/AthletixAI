@@ -48,7 +48,7 @@ permissions:
 
 env:
   PYTHON_VERSION: '3.11'
-  PR_AGENT_REPO: 'pankajshakya627/PR-AGENT'
+  PR_AGENT_REPO: 'pankajshakya627/pr-agent'
   PR_AGENT_BRANCH: 'main'
 
 jobs:
