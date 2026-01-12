@@ -48,7 +48,7 @@ permissions:
 
 env:
   PYTHON_VERSION: '3.11'
-  PR_AGENT_REPO: 'pankajshakya627/pr-agent'
+  PR_AGENT_REPO: 'pankajshakya627/PR-AGENT'
   PR_AGENT_BRANCH: 'main'
 
 jobs:
@@ -64,6 +64,7 @@ jobs:
         with:
           repository: ${{ env.PR_AGENT_REPO }}
           ref: ${{ env.PR_AGENT_BRANCH }}
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           path: pr-agent
       
       - name: Set up Python
