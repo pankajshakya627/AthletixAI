@@ -28,8 +28,18 @@ class ResearchResults(BaseModel):
     search_timestamp: datetime = Field(default_factory=datetime.now)
     
     def get_resource(self, exercise_name: str) -> Optional[ExerciseResource]:
-        """Get resource for specific exercise."""
-        return self.exercises.get(exercise_name)
+        """Get resource for specific exercise (case-insensitive)."""
+        # Try exact match first
+        if exercise_name in self.exercises:
+            return self.exercises[exercise_name]
+        
+        # Try case-insensitive match
+        exercise_lower = exercise_name.lower()
+        for key, value in self.exercises.items():
+            if key.lower() == exercise_lower:
+                return value
+        
+        return None
     
     def add_resource(self, resource: ExerciseResource) -> None:
         """Add or update exercise resource."""

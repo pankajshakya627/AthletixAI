@@ -120,12 +120,13 @@ def _enrich_program_with_resources(
         Program with exercises enriched with URLs
     """
     enriched_count = 0
+    not_found = []
     
     for week in program.weekly_schedules:
         for workout in week.workouts:
             for exercise in workout.exercises:
-                # Try to find matching resource
-                resource = research_results.get_resource(exercise.name)
+                # Try to find matching resource with fuzzy matching
+                resource = _find_matching_resource(exercise.name, research_results)
                 
                 if resource:
                     exercise.tutorial_url = resource.tutorial_url
@@ -135,9 +136,45 @@ def _enrich_program_with_resources(
                     exercise.breathing_guide = resource.breathing_guide
                     exercise.common_mistakes = resource.common_mistakes
                     enriched_count += 1
+                else:
+                    not_found.append(exercise.name)
     
     logger.info(f"✓ Enriched {enriched_count} exercises with tutorial URLs")
+    if not_found:
+        logger.warning(f"⚠️  No resources found for: {', '.join(set(not_found[:5]))}")
+    
     return program
+
+
+def _find_matching_resource(exercise_name: str, research_results) -> Optional[any]:
+    """
+    Find matching resource with fuzzy name matching.
+    
+    Handles variations like:
+    - "Bench Press / Push-ups" -> "bench press"
+    - "Barbell Row" -> "barbell row"
+    - Case insensitive matching
+    """
+    # Try exact match first (case-insensitive)
+    exact_match = research_results.get_resource(exercise_name.lower())
+    if exact_match:
+        return exact_match
+    
+    # Try first part if there's a slash (alternative exercises)
+    if '/' in exercise_name:
+        first_exercise = exercise_name.split('/')[0].strip()
+        match = research_results.get_resource(first_exercise.lower())
+        if match:
+            return match
+    
+    # Try without modifiers (e.g., "Dumbbell Bench Press" -> "bench press")
+    exercise_keywords = exercise_name.lower()
+    for cached_name in research_results.exercises.keys():
+        # Check if the cached name is in the exercise name
+        if cached_name in exercise_keywords:
+            return research_results.exercises[cached_name]
+    
+    return None
 
 
 def _create_new_program(state: FitnessState) -> TrainingProgram:
