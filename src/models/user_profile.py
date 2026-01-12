@@ -20,6 +20,13 @@ class Gender(str, Enum):
     OTHER = "other"
 
 
+class Language(str, Enum):
+    """User's preferred language for responses."""
+    ENGLISH = "english"
+    HINDI = "hindi"
+    HINGLISH = "hinglish"  # Hindi-English mix
+
+
 class DietaryRestriction(str, Enum):
     """Common dietary restrictions."""
     NONE = "none"
@@ -129,6 +136,13 @@ class UserProfile(BaseModel):
         default_factory=list,
         description="Current active injuries"
     )
+    
+    # NEW: Language preference
+    preferred_language: Language = Field(
+        default=Language.ENGLISH,
+        description="Preferred language for responses (English, Hindi, Hinglish)"
+    )
+
     equipment_available: list[str] = Field(
         default_factory=list,
         description="Available equipment (e.g., 'dumbbells', 'barbell', 'pull_up_bar')"
