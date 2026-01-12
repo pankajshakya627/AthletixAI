@@ -87,6 +87,12 @@ def planner_agent_node(state: FitnessState) -> dict[str, Any]:
         logger.info("Planner Agent: Creating new program")
         program = _create_new_program(state)
     
+    # NEW: Enrich program with research URLs if available
+    exercise_resources = state.get("exercise_resources")
+    if exercise_resources:
+        logger.info("Planner Agent: Enriching program with exercise tutorials")
+        program = _enrich_program_with_resources(program, exercise_resources)
+    
     updates["program"] = program
     updates["needs_replan"] = False  # Reset the flag
     
@@ -97,6 +103,41 @@ def planner_agent_node(state: FitnessState) -> dict[str, Any]:
     )
     
     return updates
+
+
+def _enrich_program_with_resources(
+    program: TrainingProgram,
+    research_results
+) -> TrainingProgram:
+    """
+    Enrich program exercises with tutorial URLs from research agent.
+    
+    Args:
+        program: Generated training program
+        research_results: ResearchResults from research agent
+    
+    Returns:
+        Program with exercises enriched with URLs
+    """
+    enriched_count = 0
+    
+    for week in program.weekly_schedules:
+        for workout in week.workouts:
+            for exercise in workout.exercises:
+                # Try to find matching resource
+                resource = research_results.get_resource(exercise.name)
+                
+                if resource:
+                    exercise.tutorial_url = resource.tutorial_url
+                    exercise.gif_url = resource.gif_url
+                    exercise.video_url = resource.video_url
+                    exercise.image_urls = resource.image_urls
+                    exercise.breathing_guide = resource.breathing_guide
+                    exercise.common_mistakes = resource.common_mistakes
+                    enriched_count += 1
+    
+    logger.info(f"✓ Enriched {enriched_count} exercises with tutorial URLs")
+    return program
 
 
 def _create_new_program(state: FitnessState) -> TrainingProgram:

@@ -11,6 +11,7 @@ from src.models.wearables import WearableMetrics
 from src.models.nutrition import NutritionAnalysis
 from src.models.program import TrainingProgram
 from src.models.feedback import WeeklyFeedback
+from src.models.research import ResearchResults
 
 
 class FitnessState(TypedDict, total=False):
@@ -30,6 +31,9 @@ class FitnessState(TypedDict, total=False):
     movement_assessment: Optional[MovementAssessment]
     wearable_metrics: Optional[WearableMetrics]
     nutrition_analysis: Optional[NutritionAnalysis]
+    
+    # NEW: Exercise research results from Tavily
+    exercise_resources: Optional[ResearchResults]
     
     # Generated Program
     program: Optional[TrainingProgram]
@@ -52,6 +56,11 @@ class FitnessState(TypedDict, total=False):
     # Coaching output
     coaching_message: Optional[str]
     daily_tips: Optional[list[str]]
+    
+    # NEW: Session and memory management
+    session_id: Optional[str]        # Current session ID
+    user_history: Optional[list[dict]]  # Previous workout history for personalization
+    thread_id: Optional[str]         # LangGraph thread ID for checkpoint persistence
 
 
 def create_initial_state(
