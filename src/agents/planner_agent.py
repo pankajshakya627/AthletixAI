@@ -1,9 +1,9 @@
-"""Program Planner Agent - Training program generation."""
+"""Program Planner Agent - Training program planner agent using GPT-4o."""
 
 import json
 import logging
 import re
-from typing import Any
+from typing import Any, Optional
 
 from src.state import FitnessState
 from src.models.program import (
@@ -87,11 +87,7 @@ def planner_agent_node(state: FitnessState) -> dict[str, Any]:
         logger.info("Planner Agent: Creating new program")
         program = _create_new_program(state)
     
-    # NEW: Enrich program with research URLs if available
-    exercise_resources = state.get("exercise_resources")
-    if exercise_resources:
-        logger.info("Planner Agent: Enriching program with exercise tutorials")
-        program = _enrich_program_with_resources(program, exercise_resources)
+    # NOTE: Enrichment with research URLs now happens in research_agent (runs after planner)
     
     updates["program"] = program
     updates["needs_replan"] = False  # Reset the flag
