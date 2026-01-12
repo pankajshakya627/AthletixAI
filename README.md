@@ -1,129 +1,202 @@
-# AI-Driven Virtual Fitness Coach
+# AthletixAI - AI-Driven Virtual Fitness Coach
 
-A multi-agent AI fitness coaching system built with **LangGraph** and **OpenAI API**. The system orchestrates specialized agents for exercise form analysis, wearable data interpretation, nutrition analysis from food images, program planning, coaching communication, and adaptive optimization.
+<div align="center">
+
+![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-green.svg)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-orange.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+**A multi-agent AI fitness coaching system using LangGraph for orchestration and OpenAI for intelligence.**
+
+[Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Documentation](#-documentation)
+
+</div>
+
+---
+
+## 🎯 Overview
+
+AthletixAI is an intelligent fitness coaching platform that combines:
+
+- **Computer Vision** for exercise form analysis
+- **Nutrition AI** for food image macro calculation
+- **Wearable Integration** for recovery monitoring
+- **Adaptive Training** for personalized workout programs
+
+## ✨ Features
+
+| Feature                      | Description                                                  |
+| ---------------------------- | ------------------------------------------------------------ |
+| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories |
+| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 13-15 exercises/day  |
+| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                |
+| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness     |
+| 🎯 **Form Analysis**         | Video frame analysis for movement quality                    |
+| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback              |
+
+---
 
 ## 🏗️ Architecture
 
+### System Overview
+
+```mermaid
+flowchart TB
+    subgraph Input["📥 User Inputs"]
+        UP[User Profile]
+        VF[Video Frames]
+        FI[Food Images]
+        WD[Wearable Data]
+    end
+
+    subgraph Orchestration["🔄 LangGraph Orchestration"]
+        direction LR
+        ORC[Orchestrator]
+        CV[CV Agent]
+        WA[Wearable Agent]
+        NA[Nutrition Agent]
+        PA[Planner Agent]
+        CA[Coach Agent]
+        AA[Adaptation Agent]
+    end
+
+    subgraph Output["📤 Outputs"]
+        TP[Training Program]
+        CM[Coaching Message]
+        NM[Nutrition Macros]
+    end
+
+    UP --> ORC
+    VF --> CV
+    FI --> NA
+    WD --> WA
+
+    ORC --> CV --> WA --> NA --> PA --> CA --> AA
+    AA -->|needs_replan| PA
+    AA -->|complete| Output
+
+    PA --> TP
+    CA --> CM
+    NA --> NM
 ```
-User Input → Orchestrator → CV Agent → Wearable Agent → Nutrition Agent
-                                                              ↓
-                    ←───── Adaptation Agent ← Coach Agent ← Planner Agent
-                    ↓
-            (needs_replan?) → Loop back to Planner or END
+
+### Agent Pipeline
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant O as Orchestrator
+    participant CV as CV Agent
+    participant W as Wearable Agent
+    participant N as Nutrition Agent
+    participant P as Planner Agent
+    participant C as Coach Agent
+    participant A as Adaptation Agent
+
+    U->>O: Profile + Images + Data
+    O->>CV: Validate & Route
+    CV->>W: Movement Assessment
+    W->>N: Recovery Metrics
+    N->>P: Nutrition Analysis
+    P->>C: Training Program
+    C->>A: Coaching Message
+    A-->>P: Replan (if needed)
+    A->>U: Final Results
 ```
 
-### Agents
+---
 
-| Agent                | Role                              | LLM           |
-| -------------------- | --------------------------------- | ------------- |
-| **Orchestrator**     | Entry point, validation, routing  | Deterministic |
-| **CV Agent**         | Exercise form analysis from video | GPT-4o Vision |
-| **Wearable Agent**   | HRV, sleep, recovery analysis     | GPT-4o        |
-| **Nutrition Agent**  | Food image → macros (P/C/F)       | GPT-4o Vision |
-| **Planner Agent**    | Training program generation       | GPT-4o        |
-| **Coach Agent**      | Human-like coaching messages      | GPT-4o        |
-| **Adaptation Agent** | Feedback loop decisions           | Deterministic |
-
-## 🚀 Quick Start
-
-### Installation
+## 🚀 Installation
 
 ```bash
-# Clone and navigate
-cd /Volumes/CrucialX9_MAC/Fitness_coach
+# Clone the repository
+git clone https://github.com/pankajshakya627/AthletixAI.git
+cd AthletixAI
 
-# Install in development mode
+# Install dependencies
 pip install -e ".[dev]"
 
-# Set up environment
+# Configure environment
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Add your OPENAI_API_KEY to .env
 ```
 
-### Usage
+## 📖 Usage
+
+### Interactive Mode (Recommended)
 
 ```bash
-# Basic run with user profile
-python -m src.main --profile sample_user.json
-
-# With wearable data
-python -m src.main --profile user.json --wearable wearable_data.json
-
-# With food images for nutrition analysis
-python -m src.main --profile user.json --food-images breakfast.jpg lunch.jpg
-
-# Full analysis with all inputs
-python -m src.main \
-  --profile user.json \
-  --wearable wearable.json \
-  --food-images meal.jpg \
-  --video-frames squat1.jpg squat2.jpg \
-  --output results.json
+python -m src.main --program-only
+# Choose: 1=Sample, 2=Create new profile, 3=Specify file
 ```
 
-### Sample User Profile (user.json)
+### Nutrition Analysis Only
 
-```json
-{
-  "user_id": "user123",
-  "name": "Alex",
-  "age": 30,
-  "gender": "male",
-  "height_cm": 180,
-  "weight_kg": 80,
-  "experience_level": "intermediate",
-  "equipment_available": ["dumbbells", "barbell", "pull_up_bar"],
-  "injury_history": ["lower back"],
-  "current_injuries": []
-}
+```bash
+python -m src.main --nutrition-only --food-images meal.jpg
 ```
 
-### Sample Wearable Data (wearable.json)
+### Full Mode
 
-```json
-{
-  "resting_heart_rate": 58,
-  "hrv": 65,
-  "sleep_hours": 7.5,
-  "sleep_score": 82,
-  "steps": 8500,
-  "active_calories": 450
-}
+```bash
+python -m src.main --profile user.json --food-images meal.jpg
 ```
+
+---
 
 ## 📁 Project Structure
 
 ```
-fitness_coach/
-├── pyproject.toml          # Dependencies
-├── .env.example            # Environment template
+AthletixAI/
+├── docs/
+│   ├── HLD.md              # High-Level Design
+│   └── LLD.md              # Low-Level Design
 ├── src/
 │   ├── main.py             # CLI entry point
 │   ├── graph.py            # LangGraph topology
-│   ├── state.py            # FitnessState definition
+│   ├── state.py            # FitnessState TypedDict
+│   ├── agents/             # 7 specialized agents
 │   ├── models/             # Pydantic data models
-│   ├── agents/             # Agent implementations
 │   ├── memory/             # Session & persistence
 │   ├── safety/             # Guardrails & validators
 │   └── utils/              # OpenAI client & prompts
-└── tests/                  # Test suite
+├── tests/
+├── pyproject.toml
+└── sample_user.json
 ```
 
-## ⚙️ Features
+## 📚 Documentation
 
-- **Exercise Form Analysis**: Upload video frames for biomechanics assessment
-- **Nutrition Tracking**: Photograph meals for automatic macro calculation
-- **Recovery Monitoring**: Integrate wearable data for training readiness
-- **Adaptive Programs**: Automatic adjustments based on feedback
-- **Safety Guardrails**: Volume caps, injury-aware modifications, disclaimers
+| Document              | Description                                                    |
+| --------------------- | -------------------------------------------------------------- |
+| [HLD.md](docs/HLD.md) | High-Level Design - System architecture, components, data flow |
+| [LLD.md](docs/LLD.md) | Low-Level Design - Classes, methods, algorithms, APIs          |
 
 ## 🔒 Safety
 
-- No medical diagnosis generation
-- Conservative progression rules (max 10% weekly increase)
-- Injury-aware volume caps
+- Input validation (age, weight, height ranges)
+- Weekly volume caps per muscle group
+- Injury-aware exercise modifications
+- Conservative progression (max 10%/week)
 - Automatic health disclaimers
+
+## 🛠️ Tech Stack
+
+| Category        | Technology                   |
+| --------------- | ---------------------------- |
+| Orchestration   | LangGraph (StateGraph)       |
+| AI              | OpenAI GPT-4o, GPT-4o Vision |
+| Data Validation | Pydantic v2                  |
+| Persistence     | SQLite                       |
+| Testing         | pytest                       |
 
 ## 📝 License
 
 MIT License
+
+---
+
+<div align="center">
+Made with 💪 by AthletixAI Team
+</div>
