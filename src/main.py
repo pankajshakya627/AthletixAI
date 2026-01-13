@@ -182,8 +182,9 @@ def get_user_profile_choice() -> tuple[str, Optional[UserProfile]]:
     print("   1. Use sample profile (sample_user.json)")
     print("   2. Create new profile (answer a few questions)")
     print("   3. Specify profile file path")
+    print("   Or type a filename directly (e.g., sample_user_02.json)")
     
-    choice = input("\nChoose option (1-3): ").strip()
+    choice = input("\nChoose option (1-3) or filename: ").strip()
     
     if choice == "1":
         return ("sample", None)
@@ -193,6 +194,9 @@ def get_user_profile_choice() -> tuple[str, Optional[UserProfile]]:
     elif choice == "3":
         file_path = input("Enter path to profile JSON: ").strip()
         return ("file", file_path)
+    elif choice.endswith(".json"):
+        # User typed a filename directly
+        return ("file", choice)
     else:
         print("Invalid choice, using sample profile...")
         return ("sample", None)
