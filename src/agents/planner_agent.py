@@ -307,17 +307,32 @@ def _parse_program(data: dict) -> TrainingProgram:
 
 
 def _create_default_program(user_profile: Any, goals: Any) -> TrainingProgram:
-    """Create a comprehensive 5-day program with warmup and stretching."""
+    """
+    Create a level-appropriate default program using pre-built templates.
     
-    # Always use minimum 5 days
-    days = max(5, getattr(goals, "weekly_workout_days", 5) if goals else 5)
+    Selects template based on experience level:
+    - Beginner: 3-day full body
+    - Intermediate: 5-day Push/Pull/Legs
+    - Advanced: 6-day body part split
+    """
+    from src.data.program_templates import get_template_for_level
+    from src.data.exercise_library import get_exercises_for_level, EXERCISE_LIBRARY
     
     # Get experience level
     exp_level = getattr(user_profile, "experience_level", "beginner") if user_profile else "beginner"
     if hasattr(exp_level, "value"):
         exp_level = exp_level.value
     
-    # Define workout days based on Push/Pull/Legs/Upper/Lower split
+    # Get available equipment
+    equipment = getattr(user_profile, "equipment_available", []) if user_profile else []
+    
+    # Get template for this level
+    template = get_template_for_level(exp_level)
+    days = template.get("days_per_week", 5)
+    
+    logger.info(f"Creating {exp_level} program: {template['program_name']} ({days} days/week)")
+    
+    # Build workout templates from the level-specific template
     workout_templates = [
         # Day 1: Push (Chest, Shoulders, Triceps)
         {
