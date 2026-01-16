@@ -45,9 +45,9 @@ def create_fitness_graph() -> StateGraph:
     graph.add_edge("orchestrator", "cv_agent")
     graph.add_edge("cv_agent", "wearable_agent")
     graph.add_edge("wearable_agent", "nutrition_agent")
-    graph.add_edge("nutrition_agent", "research_agent")  # NEW
-    graph.add_edge("research_agent", "planner_agent")    # NEW
-    graph.add_edge("planner_agent", "coach_agent")
+    graph.add_edge("nutrition_agent", "planner_agent")      # planner comes first now
+    graph.add_edge("planner_agent", "research_agent")       # research AFTER planner
+    graph.add_edge("research_agent", "coach_agent")         # then coach
     graph.add_edge("coach_agent", "adaptation_agent")
     
     # Add conditional edge for feedback loop
