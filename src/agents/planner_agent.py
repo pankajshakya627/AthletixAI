@@ -315,182 +315,20 @@ def _create_default_program(user_profile: Any, goals: Any) -> TrainingProgram:
     - Intermediate: 5-day Push/Pull/Legs
     - Advanced: 6-day body part split
     """
-    from src.data.program_templates import get_template_for_level
-    from src.data.exercise_library import get_exercises_for_level, EXERCISE_LIBRARY
+    from src.data.program_builder import build_program_from_template
     
     # Get experience level
     exp_level = getattr(user_profile, "experience_level", "beginner") if user_profile else "beginner"
     if hasattr(exp_level, "value"):
         exp_level = exp_level.value
     
-    # Get available equipment
-    equipment = getattr(user_profile, "equipment_available", []) if user_profile else []
+    # Get user name
+    user_name = getattr(user_profile, "name", "User") if user_profile else "User"
     
-    # Get template for this level
-    template = get_template_for_level(exp_level)
-    days = template.get("days_per_week", 5)
+    logger.info(f"Creating {exp_level} program using template-based builder")
     
-    logger.info(f"Creating {exp_level} program: {template['program_name']} ({days} days/week)")
-    
-    # Build workout templates from the level-specific template
-    workout_templates = [
-        # Day 1: Push (Chest, Shoulders, Triceps)
-        {
-            "day_name": "Push Day",
-            "focus": "Chest, Shoulders, Triceps",
-            "exercises": [
-                # Warmup
-                Exercise(name="Arm Circles", sets=2, reps="30 seconds", rest_seconds=0, technique_cues=["Forward then backward"]),
-                Exercise(name="Shoulder Rolls", sets=2, reps="15 each direction", rest_seconds=0, technique_cues=["Slow controlled movement"]),
-                Exercise(name="Push-up to Downward Dog", sets=2, reps="8", rest_seconds=30, technique_cues=["Dynamic stretch"]),
-                # Main exercises
-                Exercise(name="Bench Press / Push-ups", sets=4, reps="8-12", rest_seconds=90, technique_cues=["Control the descent", "Drive through chest"]),
-                Exercise(name="Incline Dumbbell Press", sets=3, reps="10-12", rest_seconds=75, technique_cues=["30-45 degree angle", "Full range of motion"]),
-                Exercise(name="Overhead Press", sets=3, reps="8-10", rest_seconds=90, technique_cues=["Brace core", "Lock out at top"]),
-                Exercise(name="Dumbbell Lateral Raises", sets=3, reps="12-15", rest_seconds=60, technique_cues=["Slight bend in elbows", "Control the weight"]),
-                Exercise(name="Tricep Dips / Bench Dips", sets=3, reps="10-12", rest_seconds=60, technique_cues=["Elbows back", "Full lockout"]),
-                Exercise(name="Tricep Pushdowns", sets=3, reps="12-15", rest_seconds=45, technique_cues=["Keep elbows pinned", "Squeeze at bottom"]),
-                # Core
-                Exercise(name="Plank", sets=3, reps="45-60 seconds", rest_seconds=30, technique_cues=["Keep hips level", "Engage entire core"]),
-                Exercise(name="Mountain Climbers", sets=3, reps="20 each leg", rest_seconds=30, technique_cues=["Keep hips stable"]),
-                # Stretching
-                Exercise(name="Chest Doorway Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Hold stretch, breathe"]),
-                Exercise(name="Tricep Overhead Stretch", sets=2, reps="30 seconds each arm", rest_seconds=0, technique_cues=["Gentle pull"]),
-            ]
-        },
-        # Day 2: Pull (Back, Biceps)
-        {
-            "day_name": "Pull Day",
-            "focus": "Back, Biceps, Rear Delts",
-            "exercises": [
-                # Warmup
-                Exercise(name="Cat-Cow Stretch", sets=2, reps="10", rest_seconds=0, technique_cues=["Slow controlled movement"]),
-                Exercise(name="Band Pull-Aparts", sets=2, reps="15", rest_seconds=0, technique_cues=["Squeeze shoulder blades"]),
-                Exercise(name="Dead Hang", sets=2, reps="20-30 seconds", rest_seconds=30, technique_cues=["Relax shoulders"]),
-                # Main exercises
-                Exercise(name="Pull-ups / Lat Pulldown", sets=4, reps="8-12", rest_seconds=90, technique_cues=["Lead with chest", "Full stretch at bottom"]),
-                Exercise(name="Barbell / Dumbbell Rows", sets=4, reps="8-12", rest_seconds=75, technique_cues=["Pull to hip", "Squeeze at top"]),
-                Exercise(name="Seated Cable Row", sets=3, reps="10-12", rest_seconds=60, technique_cues=["Keep chest up", "Retract scapula"]),
-                Exercise(name="Face Pulls", sets=3, reps="15", rest_seconds=45, technique_cues=["External rotation at end", "High pull"]),
-                Exercise(name="Dumbbell Bicep Curls", sets=3, reps="10-12", rest_seconds=60, technique_cues=["Control the negative", "Full range"]),
-                Exercise(name="Hammer Curls", sets=3, reps="12", rest_seconds=45, technique_cues=["Neutral grip", "No swinging"]),
-                # Core
-                Exercise(name="Dead Bug", sets=3, reps="10 each side", rest_seconds=30, technique_cues=["Keep lower back pressed down"]),
-                Exercise(name="Superman Hold", sets=3, reps="30 seconds", rest_seconds=30, technique_cues=["Squeeze glutes"]),
-                # Stretching
-                Exercise(name="Lat Stretch", sets=2, reps="30 seconds each side", rest_seconds=0, technique_cues=["Hold and breathe"]),
-                Exercise(name="Child's Pose", sets=1, reps="60 seconds", rest_seconds=0, technique_cues=["Relax completely"]),
-            ]
-        },
-        # Day 3: Legs (Quads, Hamstrings, Glutes)
-        {
-            "day_name": "Legs Day",
-            "focus": "Quads, Hamstrings, Glutes, Calves",
-            "exercises": [
-                # Warmup
-                Exercise(name="Leg Swings", sets=2, reps="15 each leg", rest_seconds=0, technique_cues=["Front to back, side to side"]),
-                Exercise(name="Bodyweight Squats", sets=2, reps="15", rest_seconds=0, technique_cues=["Full depth, controlled"]),
-                Exercise(name="Walking Lunges", sets=2, reps="10 each leg", rest_seconds=30, technique_cues=["Knee tracks over toe"]),
-                # Main exercises
-                Exercise(name="Barbell Squat / Goblet Squat", sets=4, reps="8-10", rest_seconds=120, technique_cues=["Break at hips", "Chest up", "Push knees out"]),
-                Exercise(name="Romanian Deadlift", sets=4, reps="10-12", rest_seconds=90, technique_cues=["Hinge at hips", "Slight knee bend"]),
-                Exercise(name="Leg Press / Bulgarian Split Squat", sets=3, reps="10-12 each", rest_seconds=75, technique_cues=["Full range of motion"]),
-                Exercise(name="Leg Curls", sets=3, reps="12-15", rest_seconds=60, technique_cues=["Control the eccentric"]),
-                Exercise(name="Leg Extensions", sets=3, reps="12-15", rest_seconds=60, technique_cues=["Squeeze at top"]),
-                Exercise(name="Standing Calf Raises", sets=4, reps="15-20", rest_seconds=45, technique_cues=["Full stretch at bottom", "Pause at top"]),
-                # Core
-                Exercise(name="Hanging Leg Raises / Knee Raises", sets=3, reps="12-15", rest_seconds=45, technique_cues=["Control the swing"]),
-                Exercise(name="Russian Twists", sets=3, reps="20 total", rest_seconds=30, technique_cues=["Rotate from core"]),
-                # Stretching
-                Exercise(name="Quad Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Hold stable"]),
-                Exercise(name="Hamstring Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Keep leg straight"]),
-                Exercise(name="Pigeon Pose", sets=2, reps="45 seconds each", rest_seconds=0, technique_cues=["Hip opener, breathe"]),
-            ]
-        },
-        # Day 4: Upper Body (Combination)
-        {
-            "day_name": "Upper Body",
-            "focus": "Full Upper Body",
-            "exercises": [
-                # Warmup
-                Exercise(name="Jumping Jacks", sets=2, reps="30 seconds", rest_seconds=0, technique_cues=["Light cardio warmup"]),
-                Exercise(name="Arm Circles", sets=2, reps="20 each direction", rest_seconds=0, technique_cues=["Increase range"]),
-                Exercise(name="Inchworms", sets=2, reps="8", rest_seconds=30, technique_cues=["Walk hands out, walk back"]),
-                # Main exercises
-                Exercise(name="Dumbbell Bench Press", sets=3, reps="10-12", rest_seconds=75, technique_cues=["Squeeze chest at top"]),
-                Exercise(name="One-Arm Dumbbell Row", sets=3, reps="10 each", rest_seconds=60, technique_cues=["Drive elbow back"]),
-                Exercise(name="Arnold Press", sets=3, reps="10", rest_seconds=60, technique_cues=["Rotate as you press"]),
-                Exercise(name="Incline Dumbbell Flyes", sets=3, reps="12", rest_seconds=60, technique_cues=["Slight elbow bend"]),
-                Exercise(name="Straight Arm Pulldown", sets=3, reps="12-15", rest_seconds=45, technique_cues=["Engage lats"]),
-                Exercise(name="EZ Bar Curl", sets=3, reps="12", rest_seconds=45, technique_cues=["Controlled tempo"]),
-                Exercise(name="Overhead Tricep Extension", sets=3, reps="12", rest_seconds=45, technique_cues=["Keep elbows in"]),
-                # Core
-                Exercise(name="Bicycle Crunches", sets=3, reps="20 each side", rest_seconds=30, technique_cues=["Touch elbow to knee"]),
-                Exercise(name="Plank Shoulder Taps", sets=3, reps="10 each side", rest_seconds=30, technique_cues=["Minimize hip rotation"]),
-                # Stretching
-                Exercise(name="Cross-Body Shoulder Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Hold gently"]),
-                Exercise(name="Neck Stretches", sets=2, reps="20 seconds each side", rest_seconds=0, technique_cues=["Gentle tilt"]),
-            ]
-        },
-        # Day 5: Lower Body & Core Focus
-        {
-            "day_name": "Lower & Core",
-            "focus": "Glutes, Hamstrings, Core",
-            "exercises": [
-                # Warmup
-                Exercise(name="Hip Circles", sets=2, reps="10 each direction", rest_seconds=0, technique_cues=["Open up hips"]),
-                Exercise(name="Glute Bridges", sets=2, reps="15", rest_seconds=0, technique_cues=["Squeeze glutes at top"]),
-                Exercise(name="Fire Hydrants", sets=2, reps="12 each leg", rest_seconds=30, technique_cues=["Control the movement"]),
-                # Main exercises
-                Exercise(name="Hip Thrusts", sets=4, reps="12", rest_seconds=75, technique_cues=["Drive through heels", "Squeeze at top"]),
-                Exercise(name="Sumo Deadlift / Sumo Squat", sets=4, reps="10", rest_seconds=90, technique_cues=["Wide stance", "Chest up"]),
-                Exercise(name="Step-Ups", sets=3, reps="12 each leg", rest_seconds=60, technique_cues=["Push through heel"]),
-                Exercise(name="Good Mornings", sets=3, reps="12", rest_seconds=60, technique_cues=["Hinge at hips", "Keep back straight"]),
-                Exercise(name="Cable Kickbacks / Donkey Kicks", sets=3, reps="15 each", rest_seconds=45, technique_cues=["Squeeze glute"]),
-                Exercise(name="Seated Calf Raises", sets=3, reps="15-20", rest_seconds=45, technique_cues=["Full contraction"]),
-                # Core
-                Exercise(name="Ab Wheel Rollout / Plank", sets=3, reps="10", rest_seconds=45, technique_cues=["Brace core throughout"]),
-                Exercise(name="Side Plank", sets=3, reps="30 seconds each", rest_seconds=30, technique_cues=["Keep hips elevated"]),
-                Exercise(name="Reverse Crunches", sets=3, reps="15", rest_seconds=30, technique_cues=["Lift hips off ground"]),
-                # Stretching
-                Exercise(name="90-90 Hip Stretch", sets=2, reps="45 seconds each", rest_seconds=0, technique_cues=["Sink into stretch"]),
-                Exercise(name="Figure-4 Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Relax and breathe"]),
-                Exercise(name="Standing Quad Stretch", sets=2, reps="30 seconds each", rest_seconds=0, technique_cues=["Hold balance"]),
-            ]
-        },
-    ]
-    
-    workouts = []
-    for d in range(min(days, 5)):
-        template = workout_templates[d]
-        workouts.append(DailyWorkout(
-            day_number=d + 1,
-            day_name=template["day_name"],
-            focus=template["focus"],
-            exercises=template["exercises"],
-            estimated_duration_minutes=60,
-        ))
-    
-    return TrainingProgram(
-        program_name=f"{exp_level.title()} 5-Day Push/Pull/Legs Program",
-        program_length_weeks=4,
-        weekly_split="Push/Pull/Legs/Upper/Lower",
-        weekly_schedules=[WeeklySchedule(week_number=1, workouts=workouts)],
-        progression_rules=[
-            ProgressionRule(
-                rule_type="double_progression",
-                condition="Complete all reps with good form for 2 sessions",
-                action="Add 1-2 reps, then increase weight by 2.5-5kg"
-            ),
-            ProgressionRule(
-                rule_type="deload",
-                condition="Every 4th week or when fatigue is high",
-                action="Reduce weight by 10-15%, focus on form"
-            )
-        ],
-        difficulty_level=exp_level,
-        goals_addressed=["Muscle Building", "Strength", "General Fitness"],
-    )
+    # Use the new template-based program builder
+    return build_program_from_template(exp_level, user_name)
 
 
 def _format_profile(profile: Any) -> str:
