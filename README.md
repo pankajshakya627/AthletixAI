@@ -119,7 +119,7 @@ streamlit run src/app.py
 
 - **Create Profile**: Enter your details directly in the side bar.
 - **Generate Program**: One-click generation of personalized plans.
-- **Interactive Workouts**: View daily workouts with **clickable video links**.
+- **Rich Workout Tables**: View daily workouts with dedicated columns for **Tutorials**, **Videos**, and **Visuals**.
 - **Schedule**: Visual weekly calendar.
 
 ### 💻 Command Line Interface
