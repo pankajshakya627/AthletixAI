@@ -318,6 +318,7 @@ def run_program_generation(
     from src.agents.cv_agent import cv_agent_node
     from src.agents.wearable_agent import wearable_agent_node
     from src.agents.planner_agent import planner_agent_node
+    from src.agents.research_agent import research_agent_node
     from src.agents.coach_agent import coach_agent_node
     
     logger.info("Running program generation only...")
@@ -339,6 +340,7 @@ def run_program_generation(
     state.update(cv_agent_node(state))
     state.update(wearable_agent_node(state))
     state.update(planner_agent_node(state))
+    state.update(research_agent_node(state))  # Fetch tutorial URLs for exercises
     state.update(coach_agent_node(state))
     
     return state
