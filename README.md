@@ -26,18 +26,18 @@ AthletixAI is an intelligent fitness coaching platform that combines:
 
 ## ✨ Features
 
-| Feature                      | Description                                                          |
-| ---------------------------- | -------------------------------------------------------------------- |
-| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories         |
-| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 15-20 exercises/day          |
-| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                        |
-| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness             |
-| 🎯 **Form Analysis**         | Video frame analysis for movement quality                            |
-| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback                      |
-| 🔍 **Exercise Research**     | Auto-search for tutorials, videos, GIFs for every exercise           |
-| 🗄️ **Long-term Memory**      | Supabase storage for user profiles, programs, workout history        |
-| 🖥️ **Interactive Web UI**    | Streamlit dashboard for profile management and workout visualization |
-| 📚 **Rich Resources**        | Clickable Tutorial, Video, and GIF links for every exercise          |
+| Feature                      | Description                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories                                    |
+| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 15-20 exercises/day                                     |
+| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                                                   |
+| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness                                        |
+| 🎯 **Form Analysis**         | Video frame analysis for movement quality                                                       |
+| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback                                                 |
+| 🔍 **Exercise Research**     | Auto-search for tutorials, videos, GIFs for every exercise                                      |
+| 🗄️ **Long-term Memory**      | Supabase storage for user profiles, programs, workout history                                   |
+| 🖥️ **Interactive Web UI**    | Streamlit dashboard for **interactive profile creation**, management, and workout visualization |
+| 📚 **Rich Resources**        | Clickable Tutorial, Video, and GIF links for every exercise                                     |
 
 ---
 
