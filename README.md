@@ -26,17 +26,18 @@ AthletixAI is an intelligent fitness coaching platform that combines:
 
 ## ✨ Features
 
-| Feature                      | Description                                                       |
-| ---------------------------- | ----------------------------------------------------------------- |
-| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories      |
-| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 13-15 exercises/day       |
-| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                     |
-| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness          |
-| 🎯 **Form Analysis**         | Video frame analysis for movement quality                         |
-| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback                   |
-| 🔍 **Exercise Research**     | Auto-search for tutorials, videos, GIFs for every exercise        |
-| 🗄️ **Long-term Memory**      | Supabase storage for user profiles, programs, workout history     |
-| 📚 **Educational Resources** | Each exercise includes tutorial URLs, breathing guides, form tips |
+| Feature                      | Description                                                          |
+| ---------------------------- | -------------------------------------------------------------------- |
+| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories         |
+| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 13-15 exercises/day          |
+| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                        |
+| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness             |
+| 🎯 **Form Analysis**         | Video frame analysis for movement quality                            |
+| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback                      |
+| 🔍 **Exercise Research**     | Auto-search for tutorials, videos, GIFs for every exercise           |
+| 🗄️ **Long-term Memory**      | Supabase storage for user profiles, programs, workout history        |
+| 🖥️ **Interactive Web UI**    | Streamlit dashboard for profile management and workout visualization |
+| 📚 **Educational Resources** | Each exercise includes tutorial URLs, breathing guides, form tips    |
 
 ---
 
@@ -141,6 +142,7 @@ AthletixAI/
 ├── migrations/
 │   └── 001_initial_schema.sql  # Supabase database schema
 ├── src/
+│   ├── app.py                  # Streamlit Web UI
 │   ├── main.py                 # CLI entry point
 │   ├── graph.py                # LangGraph topology
 │   ├── state.py                # FitnessState TypedDict
@@ -190,6 +192,7 @@ AthletixAI/
 | Search          | Tavily API                    |
 | Memory          | LangGraph Checkpoints, SQLite |
 | Persistence     | SQLite                        |
+| Frontend        | Streamlit                     |
 | Testing         | pytest                        |
 
 ## 📝 License
