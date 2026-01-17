@@ -1,0 +1,14 @@
+{
+  "user_id": "user124",
+  "name": "Sandy",
+  "age": 26,
+  "gender": "male",
+  "height_cm": 167,
+  "weight_kg": 70,
+  "experience_level": "beginner",
+  "equipment_available": [],
+  "injury_history": [],
+  "current_injuries": [],
+  "preferred_language": "hindi",
+  "medical_conditions": []
+}

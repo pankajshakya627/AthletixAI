@@ -30,11 +30,14 @@ def research_agent_node(state: FitnessState) -> dict[str, Any]:
     """
     Research agent that finds exercise tutorials and resources.
     
+    NOW runs AFTER planner to research all exercises in the generated program.
+    
     Flow:
-    1. Extract exercise names from state (or use common exercises)
+    1. Extract exercise names from generated program
     2. Check cache in Supabase for existing resources
     3. For uncached exercises, search Tavily API
-    4. Store results in Supabase and return in state
+    4. Enrich the program exercises with URLs in-place
+    5. Store results in Supabase
     """
     logger.info("🔍 Research Agent: Searching for exercise resources...")
     
@@ -43,14 +46,19 @@ def research_agent_node(state: FitnessState) -> dict[str, Any]:
         logger.warning("TAVILY_API_KEY not configured. Skipping research agent.")
         return {}
     
-    # Extract exercise names
-    exercises = _extract_exercise_names(state)
+    # Extract exercises from generated program
+    program = state.get("program")
+    if not program:
+        logger.warning("No program in state yet. Skipping research.")
+        return {}
+    
+    exercises = _extract_exercise_names_from_program(program)
     
     if not exercises:
-        logger.info("No exercises identified yet. Using common exercises for demo.")
-        exercises = list(FALLBACK_URLS.keys())[:5]  # First 5 common exercises
+        logger.info("No exercises found in program. Skipping research.")
+        return {}
     
-    logger.info(f"Researching {len(exercises)} exercises...")
+    logger.info(f"Researching {len(exercises)} exercises from program...")
     
     # Initialize clients
     try:
@@ -62,7 +70,7 @@ def research_agent_node(state: FitnessState) -> dict[str, Any]:
     user_memory = UserMemory()
     research_results = {}
     
-    for exercise_name in exercises[:10]:  # Limit to 10 exercises to avoid excessive API calls
+    for exercise_name in exercises[:50]:  # Limit to 50 to avoid excessive API calls
         # Check cache first
         if user_memory.is_enabled():
             cached = user_memory.get_cached_exercise_resource(exercise_name)
@@ -84,11 +92,19 @@ def research_agent_node(state: FitnessState) -> dict[str, Any]:
     
     logger.info(f"✓ Research complete. Found resources for {len(research_results)} exercises.")
     
+    # Create results object
+    from src.models.research import ResearchResults
+    results = ResearchResults(
+        exercises=research_results,
+        search_timestamp=datetime.now()
+    )
+    
+    # Enrich the program IN-PLACE with URLs
+    enriched_program = _enrich_program_in_place(program, results)
+    
     return {
-        "exercise_resources": ResearchResults(
-            exercises=research_results,
-            search_timestamp=datetime.now()
-        )
+        "exercise_resources": results,
+        "program": enriched_program  # Return enriched program
     }
 
 
@@ -232,3 +248,81 @@ def _extract_exercise_names(state: FitnessState) -> list[str]:
                     exercises.add(exercise.name)
     
     return list(exercises)
+
+
+def _extract_exercise_names_from_program(program) -> list[str]:
+    """Extract all exercise names from a training program."""
+    exercises = set()
+    
+    if not program or not hasattr(program, "weekly_schedules"):
+        return []
+    
+    for week in program.weekly_schedules:
+        for workout in week.workouts:
+            for exercise in workout.exercises:
+                # Normalize name for better matching
+                name = exercise.name.strip().lower()
+                exercises.add(name)
+    
+    return list(exercises)
+
+
+def _enrich_program_in_place(program, research_results):
+    """
+    Enrich program exercises with research URLs in-place.
+    
+    Args:
+        program: TrainingProgram to enrich
+        research_results: ResearchResults with exercise resources
+    
+    Returns:
+        The same program object (modified in-place)
+    """
+    enriched_count = 0
+    not_found = []
+    
+    for week in program.weekly_schedules:
+        for workout in week.workouts:
+            for exercise in workout.exercises:
+                # Try to find matching resource
+                resource = _find_matching_resource_fuzzy(exercise.name, research_results)
+                
+                if resource:
+                    exercise.tutorial_url = resource.tutorial_url
+                    exercise.gif_url = resource.gif_url
+                    exercise.video_url = resource.video_url
+                    exercise.image_urls = resource.image_urls
+                    exercise.breathing_guide = resource.breathing_guide
+                    exercise.common_mistakes = resource.common_mistakes
+                    enriched_count += 1
+                else:
+                    not_found.append(exercise.name)
+    
+    logger.info(f"✓ Enriched {enriched_count}/{len(not_found) + enriched_count} exercises with URLs")
+    if not_found and len(not_found) <= 5:
+        logger.warning(f"⚠️  No resources for: {', '.join(not_found)}")
+    
+    return program
+
+
+def _find_matching_resource_fuzzy(exercise_name: str, research_results) -> Optional[ExerciseResource]:
+    """Find matching resource with fuzzy name matching."""
+    # Try exact match first (case-insensitive)
+    exact_match = research_results.get_resource(exercise_name.lower())
+    if exact_match:
+        return exact_match
+    
+    # Try first part if there's a slash (alternative exercises)
+    if '/' in exercise_name:
+        first_exercise = exercise_name.split('/')[0].strip()
+        match = research_results.get_resource(first_exercise.lower())
+        if match:
+            return match
+    
+    # Try keyword matching
+    exercise_keywords = exercise_name.lower()
+    for cached_name in research_results.exercises.keys():
+        if cached_name in exercise_keywords:
+            return research_results.exercises[cached_name]
+    
+    return None

@@ -35,7 +35,9 @@ dependencies = [
     # Long-term memory
     "supabase>=2.0.0",
     "langgraph-checkpoint>=0.1.0",
+    "langgraph-checkpoint>=0.1.0",
     "langgraph-checkpoint-postgres>=0.1.0",
+    "streamlit>=1.30.0",
 ]
 
 [project.optional-dependencies]

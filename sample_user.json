@@ -1,13 +1,14 @@
 {
   "user_id": "user123",
   "name": "Alex",
-  "age": 30,
+  "age": 25,
   "gender": "male",
-  "height_cm": 180,
-  "weight_kg": 80,
+  "height_cm": 170,
+  "weight_kg": 72,
   "experience_level": "intermediate",
   "equipment_available": ["dumbbells", "barbell", "pull_up_bar", "bench"],
   "injury_history": ["lower back"],
   "current_injuries": [],
+  "preferred_language": "english",
   "medical_conditions": []
 }

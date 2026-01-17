@@ -4,12 +4,13 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-green.svg)
+![Supabase](https://img.shields.io/badge/Supabase-Database-blueviolet.svg)
+![pgvector](https://img.shields.io/badge/pgvector-Semantic%20Search-orange.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-orange.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-**A multi-agent AI fitness coaching system using LangGraph for orchestration and OpenAI for intelligence.**
+**A multi-agent AI fitness coaching system using LangGraph for orchestration and Supabase for long-term memory.**
 
-[Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Documentation](#-documentation)
+[Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Database Setup](#-database-setup) • [Documentation](#-documentation)
 
 </div>
 
@@ -21,22 +22,21 @@ AthletixAI is an intelligent fitness coaching platform that combines:
 
 - **Computer Vision** for exercise form analysis
 - **Nutrition AI** for food image macro calculation
-- **Wearable Integration** for recovery monitoring
-- **Adaptive Training** for personalized workout programs
+- **Long-Term Memory** for cross-session personalized training
+- **Semantic Search** for intelligent exercise discovery and substitution
 
 ## ✨ Features
 
-| Feature                      | Description                                                       |
-| ---------------------------- | ----------------------------------------------------------------- |
-| 🍎 **Nutrition Analysis**    | Photograph meals → Get protein, carbs, fats, fiber, calories      |
-| 🏋️ **5-Day Programs**        | Comprehensive Push/Pull/Legs split with 13-15 exercises/day       |
-| 🧘 **Warmup & Stretching**   | Built-in dynamic warmups and static cooldowns                     |
-| 📊 **Recovery Tracking**     | HRV, sleep, and activity analysis for training readiness          |
-| 🎯 **Form Analysis**         | Video frame analysis for movement quality                         |
-| 🔄 **Adaptive Optimization** | Automatic program adjustments based on feedback                   |
-| 🔍 **Exercise Research**     | Auto-search for tutorials, videos, GIFs for every exercise        |
-| 🗄️ **Long-term Memory**      | Supabase storage for user profiles, programs, workout history     |
-| 📚 **Educational Resources** | Each exercise includes tutorial URLs, breathing guides, form tips |
+| Feature                    | Description                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| 🗄️ **Long-term Memory**    | Supabase storage for user profiles, programs, workout history, and cross-session learning.    |
+| 🔍 **Semantic Search**     | Intelligence exercise discovery using **pgvector**. Find "leg exercises" or "core stability". |
+| 🍎 **Nutrition Analysis**  | Photograph meals → Get protein, carbs, fats, fiber, calories.                                 |
+| 🏋️ **Adaptive Programs**   | Programs adjust based on your history and experience level (Beginner/Intermediate/Advanced).  |
+| 🧘 **Warmup & Stretching** | Built-in dynamic warmups and static cooldowns tailored to your daily plan.                    |
+| 📊 **Recovery Tracking**   | HRV, sleep, and activity analysis for training readiness.                                     |
+| 🖥️ **Interactive Web UI**  | Streamlit dashboard with **Cloud Sync Active** indicators and profile management.             |
+| 📚 **Rich Resources**      | Clickable Tutorial, Video, and GIF links for every exercise.                                  |
 
 ---
 
@@ -46,99 +46,54 @@ AthletixAI is an intelligent fitness coaching platform that combines:
 
 ```mermaid
 flowchart TB
-    subgraph Input["📥 User Inputs"]
-        UP[User Profile]
-        VF[Video Frames]
-        FI[Food Images]
-        WD[Wearable Data]
+    subgraph UI["🖥️ User Interface"]
+        ST[Streamlit App]
+        CLI[Command Line]
     end
 
     subgraph Orchestration["🔄 LangGraph Orchestration"]
-        direction LR
         ORC[Orchestrator]
         CV[CV Agent]
         WA[Wearable Agent]
-        NA[Nutrition Agent]
-        RA[Research Agent]
         PA[Planner Agent]
+        RA[Research Agent]
         CA[Coach Agent]
-        AA[Adaptation Agent]
     end
 
-    subgraph Memory["🗄️ Memory System"]
-        CACHE[(Supabase Cache)]
+    subgraph Memory["🗄️ Cloud Memory (Supabase)"]
+        PROF[(User Profiles)]
+        PROG[(Training Programs)]
         HIST[(Workout History)]
+        VEC[(Exercise Vector DB)]
     end
 
-    subgraph Output["📤 Outputs"]
-        TP[Training Program]
-        CM[Coaching Message]
-        NM[Nutrition Macros]
-    end
-
-    UP --> ORC
-    VF --> CV
-    FI --> NA
-    WD --> WA
-
-    ORC --> CV --> WA --> NA --> RA --> PA --> CA --> AA
-    RA -.->|Cache| CACHE
-    RA -.->|Retrieve| CACHE
-    PA -.->|Save| HIST
-    AA -->|needs_replan| PA
-    AA -->|complete| Output
-
-    PA --> TP
-    CA --> CM
-    NA --> NM
+    ST & CLI --> ORC
+    ORC --> CV & WA --> PA
+    PA --> RA
+    RA --> CA
+    PA -.->|Grounding| HIST
+    RA -.->|Search| VEC
+    CA -.->|Persistence| PROG
 ```
 
 ### Agent Pipeline
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Orchestrator
-    participant Research
-    participant Planner
-    participant Supabase
+1.  **User Profile**: Inputs from UI or JSON.
+2.  **Planner**: Generates 5-6 day workout program based on experience (Intermediate/Advanced).
+3.  **Research**: Searches web (Tavily) for tutorial videos/articles for every exercise.
+4.  **Coach**: Adds personalized advice and motivation.
+5.  **Output**: Interactive table with clickable video links.
 
-    User->>Orchestrator: Profile + Goals
-    Orchestrator->>Research: Find exercise resources
-    Research->>Supabase: Check cache
-    alt Cache miss
-        Research->>Tavily: Search tutorials/videos/GIFs
-        Research->>Supabase: Cache results (30 days)
-    end
-    Research->>Planner: Exercise resources
-    Planner->>Planner: Generate 5-day program
-    Planner->>Planner: Enrich with URLs
-    Planner->>User: Program with tutorials
-```
+---
 
-### Agent Pipeline
+## 📸 Screenshots
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant O as Orchestrator
-    participant CV as CV Agent
-    participant W as Wearable Agent
-    participant N as Nutrition Agent
-    participant P as Planner Agent
-    participant C as Coach Agent
-    participant A as Adaptation Agent
+> _Run the app to see the interactive dashboard!_
 
-    U->>O: Profile + Images + Data
-    O->>CV: Validate & Route
-    CV->>W: Movement Assessment
-    W->>N: Recovery Metrics
-    N->>P: Nutrition Analysis
-    P->>C: Training Program
-    C->>A: Coaching Message
-    A-->>P: Replan (if needed)
-    A->>U: Final Results
-```
+|                      **Profile Creation**                      |                       **Workout Dashboard**                       |
+| :------------------------------------------------------------: | :---------------------------------------------------------------: |
+|          Create/Edit profiles directly in the sidebar          |             View clear, resource-rich workout tables              |
+| ![Profile](https://placehold.co/400x300?text=Profile+Creation) | ![Dashboard](https://placehold.co/400x300?text=Workout+Dashboard) |
 
 ---
 
@@ -155,50 +110,71 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -e ".[dev]"
+pip install streamlit supabase tqdm
 
 # Configure environment
 cp .env.example .env
 # Edit .env and add your API keys:
 # - OPENAI_API_KEY (required)
 # - TAVILY_API_KEY (optional, for exercise research)
-# - SUPABASE_URL and SUPABASE_KEY (optional, for memory)
+# - SUPABASE_URL/KEY (optional, for caching)
 ```
 
-### Supabase Setup (Optional)
+## 🗄️ Database Setup (Supabase)
 
-For long-term memory and exercise caching:
+AthletixAI requires **Supabase** for its core intelligence and long-term memory.
 
-1. Create account at [supabase.com](https://supabase.com)
-2. Create new project
-3. Run migration: Copy `migrations/001_initial_schema.sql` to SQL Editor
-4. Get credentials from **Settings → API**
-5. Add to `.env`:
-   ```bash
-   SUPABASE_URL=https://xxxxx.supabase.co
-   SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   ```
+### 1. Configure Environment
 
-See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) for detailed instructions.
+Add your credentials to `.env`:
+
+```env
+SUPABASE_URL=your_project_url
+SUPABASE_KEY=your_service_role_key
+OPENAI_API_KEY=your_key
+```
+
+### 2. Apply Migrations
+
+Run these SQL scripts in order in your **Supabase SQL Editor**:
+
+1.  [001_initial_schema.sql](migrations/001_initial_schema.sql) - Core tables.
+2.  [002_add_difficulty.sql](migrations/002_add_difficulty.sql) - Exercise metadata.
+3.  [003_semantic_search.sql](migrations/003_semantic_search.sql) - **CRITICAL**: Enables `pgvector` and semantic search.
+
+### 3. Seed Vector Database
+
+Once migrations are complete and API keys are set, populate the exercise library:
+
+```bash
+python scripts/seed_exercises_vector.py
+```
+
+_This generates OpenAI embeddings for 100+ exercises and saves them to your cloud database._
+
+---
 
 ## 📖 Usage
 
-### Interactive Mode (Recommended)
+### 🖥️ Interactive Web UI (Recommended)
+
+The easiest way to use the coach is via the Streamlit app:
 
 ```bash
-python -m src.main --program-only
-# Choose: 1=Sample, 2=Create new profile, 3=Specify file
+streamlit run src/app.py
 ```
 
-### Nutrition Analysis Only
+**Features:**
+
+- **Cloud Sync Active**: Real-time indicator of Supabase connectivity.
+- **Historical Grounding**: Automatically adjusts your new program based on your last 5 workouts.
+- **Rich Dashboard**: View weekly schedules with embedded exercise tutorials.
+
+### 💻 Command Line Interface
 
 ```bash
-python -m src.main --nutrition-only --food-images meal.jpg
-```
-
-### Full Mode
-
-```bash
-python -m src.main --profile user.json --food-images meal.jpg
+# Run program generation for a specific profile
+python -m src.main --program-only --profile sample_user.json
 ```
 
 ---
@@ -214,6 +190,7 @@ AthletixAI/
 ├── migrations/
 │   └── 001_initial_schema.sql  # Supabase database schema
 ├── src/
+│   ├── app.py                  # Streamlit Web UI
 │   ├── main.py                 # CLI entry point
 │   ├── graph.py                # LangGraph topology
 │   ├── state.py                # FitnessState TypedDict
@@ -238,11 +215,11 @@ AthletixAI/
 
 ## 📚 Documentation
 
-| Document                                    | Description                                             |
-| ------------------------------------------- | ------------------------------------------------------- |
-| [HLD.md](docs/HLD.md)                       | High-Level Design - Architecture, components, data flow |
-| [LLD.md](docs/LLD.md)                       | Low-Level Design - Classes, methods, algorithms, APIs   |
-| [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md) | Supabase database setup and configuration guide         |
+| Document                                           | Description                                           |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| [Enterprise_HLD.md](docs/Enterprise_HLD.md)        | **New** Enterprise Design Thinking Framework HLD      |
+| [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)        | Detailed database configuration guide                 |
+| [Interview_Preparation.md](docs/Enterprise_HLD.md) | Structured Q&A for the Enterprise Design architecture |
 
 ## 🔒 Safety
 
@@ -254,16 +231,14 @@ AthletixAI/
 
 ## 🛠️ Tech Stack
 
-| Category        | Technology                    |
-| --------------- | ----------------------------- |
-| Orchestration   | LangGraph (StateGraph)        |
-| AI              | OpenAI GPT-4o, GPT-4o Vision  |
-| Data Validation | Pydantic v2                   |
-| Database        | Supabase (PostgreSQL)         |
-| Search          | Tavily API                    |
-| Memory          | LangGraph Checkpoints, SQLite |
-| Persistence     | SQLite                        |
-| Testing         | pytest                        |
+| Category      | Technology                       |
+| ------------- | -------------------------------- |
+| Orchestration | LangGraph (StateGraph)           |
+| AI            | OpenAI GPT-4o, text-embedding-3  |
+| Database      | Supabase (PostgreSQL + pgvector) |
+| Vector Store  | HNSW Index on Supabase           |
+| Frontend      | Streamlit                        |
+| Search        | Tavily API                       |
 
 ## 📝 License
 

@@ -182,8 +182,9 @@ def get_user_profile_choice() -> tuple[str, Optional[UserProfile]]:
     print("   1. Use sample profile (sample_user.json)")
     print("   2. Create new profile (answer a few questions)")
     print("   3. Specify profile file path")
+    print("   Or type a filename directly (e.g., sample_user_02.json)")
     
-    choice = input("\nChoose option (1-3): ").strip()
+    choice = input("\nChoose option (1-3) or filename: ").strip()
     
     if choice == "1":
         return ("sample", None)
@@ -193,6 +194,9 @@ def get_user_profile_choice() -> tuple[str, Optional[UserProfile]]:
     elif choice == "3":
         file_path = input("Enter path to profile JSON: ").strip()
         return ("file", file_path)
+    elif choice.endswith(".json"):
+        # User typed a filename directly
+        return ("file", choice)
     else:
         print("Invalid choice, using sample profile...")
         return ("sample", None)
@@ -314,6 +318,7 @@ def run_program_generation(
     from src.agents.cv_agent import cv_agent_node
     from src.agents.wearable_agent import wearable_agent_node
     from src.agents.planner_agent import planner_agent_node
+    from src.agents.research_agent import research_agent_node
     from src.agents.coach_agent import coach_agent_node
     
     logger.info("Running program generation only...")
@@ -335,23 +340,34 @@ def run_program_generation(
     state.update(cv_agent_node(state))
     state.update(wearable_agent_node(state))
     state.update(planner_agent_node(state))
+    state.update(research_agent_node(state))  # Fetch tutorial URLs for exercises
     state.update(coach_agent_node(state))
     
     return state
 
 
 def display_program_only(state: dict) -> None:
-    """Display program and coaching results only."""
-    print("\n" + "=" * 70)
-    print("🏋️ TRAINING PROGRAM")
-    print("=" * 70)
+    """Display program and coaching results in a table format."""
+    print("\n" + "=" * 80)
+    print("🏋️ TRAINING PROGRAM".center(80))
+    print("=" * 80)
     
     # Coaching message
     coaching_message = state.get("coaching_message")
     if coaching_message:
         print("\n📣 COACHING MESSAGE:")
-        print("-" * 70)
-        print(coaching_message)
+        print("-" * 80)
+        # Simple word wrap for coaching message
+        words = coaching_message.split()
+        line = ""
+        for word in words:
+            if len(line) + len(word) + 1 > 80:
+                print(line)
+                line = word
+            else:
+                line = line + " " + word if line else word
+        if line:
+            print(line)
     
     # Daily tips
     tips = state.get("daily_tips", [])
@@ -364,21 +380,55 @@ def display_program_only(state: dict) -> None:
     program = state.get("program")
     if program:
         print("\n📋 PROGRAM DETAILS:")
-        print("-" * 70)
-        print(f"  Program: {program.program_name}")
+        print("-" * 80)
+        print(f"  Program:  {program.program_name}")
         print(f"  Duration: {program.program_length_weeks} weeks")
-        print(f"  Split: {program.weekly_split}")
+        print(f"  Split:    {program.weekly_split}")
         
-        # Show first week's workouts
+        # Show all workouts with exercises in a table
         if program.weekly_schedules:
             week = program.weekly_schedules[0]
             print(f"\n  Week 1 Workouts:")
-            for workout in week.workouts[:3]:
-                print(f"    • {workout.day_name}: {workout.focus}")
-                for ex in workout.exercises[:3]:
-                    print(f"        - {ex.name}: {ex.sets}x{ex.reps}")
-    
-    print("\n" + "=" * 70 + "\n")
+            
+            for workout in week.workouts:
+                print(f"\n    📆 {workout.day_name}: {workout.focus}")
+                
+                # Table Header
+                print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+                print("    " + f"| {'Exercise':<30} | {'Sets':<6} | {'Reps':<12} | {'Resources':<40} |")
+                print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+                
+                for ex in workout.exercises:
+                    # Prepare resource lines
+                    resources = []
+                    if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
+                        resources.append(f"📺 Tutorial")
+                        resources.append(ex.tutorial_url)
+                    if hasattr(ex, 'video_url') and ex.video_url:
+                        resources.append(f"🎬 Video")
+                        resources.append(ex.video_url)
+                    
+                    # If no resources, ensure at least one empty line
+                    if not resources:
+                        resources = [""]
+                    
+                    # Print first line with exercise info
+                    res_line = resources[0] if resources else ""
+                    # Truncate resource if too long for one line, technically we should wrap but simple crop is safer for table alignment
+                    if len(res_line) > 40: res_line = res_line[:37] + "..."
+                    
+                    print("    " + f"| {ex.name[:30]:<30} | {str(ex.sets):<6} | {str(ex.reps)[:12]:<12} | {res_line:<40} |")
+                    
+                    # Print remaining resource lines
+                    for i in range(1, len(resources)):
+                        res_line = resources[i]
+                        if len(res_line) > 40: res_line = res_line[:37] + "..."
+                        print("    " + f"| {'':<30} | {'':<6} | {'':<12} | {res_line:<40} |")
+                    
+                    # Row separator
+                    print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+
+    print("\n" + "=" * 80 + "\n")
 
 
 def run_program_with_profile(
@@ -393,7 +443,11 @@ def run_program_with_profile(
     from src.agents.cv_agent import cv_agent_node
     from src.agents.wearable_agent import wearable_agent_node
     from src.agents.planner_agent import planner_agent_node
+    from src.agents.research_agent import research_agent_node
     from src.agents.coach_agent import coach_agent_node
+    from src.memory.user_memory import UserMemory
+    
+    memory = UserMemory()
     
     logger.info(f"Running program for: {user_profile.name}")
     
@@ -403,10 +457,19 @@ def run_program_with_profile(
     state = create_initial_state(user_profile=user_profile, goals=goals)
     state["wearable_data"] = wearable_data
     
+    # Historical Grounding
+    if memory.is_enabled():
+        logger.info(f"Fetching history for: {user_profile.name}")
+        history = memory.get_workout_history(user_profile.name, limit=5)
+        state["history"] = history
+    else:
+        state["history"] = []
+    
     state.update(orchestrator_node(state))
     state.update(cv_agent_node(state))
     state.update(wearable_agent_node(state))
     state.update(planner_agent_node(state))
+    state.update(research_agent_node(state))  # Research exercises for URLs
     state.update(coach_agent_node(state))
     
     return state

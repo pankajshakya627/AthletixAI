@@ -153,3 +153,21 @@ def get_structured_response(
         temperature=0.3,  # Lower temperature for structured output
         response_format={"type": "json_object"},
     )
+
+
+def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[float]:
+    """
+    Generate embedding for a given text using OpenAI.
+    
+    Args:
+        text: The text to embed
+        model: Embedding model to use
+        
+    Returns:
+        List of floats representing the embedding
+    """
+    client = get_openai_client()
+    text = text.replace("\n", " ")
+    response = client.embeddings.create(input=[text], model=model)
+    return response.data[0].embedding
+
