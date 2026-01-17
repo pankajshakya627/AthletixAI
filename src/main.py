@@ -445,6 +445,9 @@ def run_program_with_profile(
     from src.agents.planner_agent import planner_agent_node
     from src.agents.research_agent import research_agent_node
     from src.agents.coach_agent import coach_agent_node
+    from src.memory.user_memory import UserMemory
+    
+    memory = UserMemory()
     
     logger.info(f"Running program for: {user_profile.name}")
     
@@ -453,6 +456,14 @@ def run_program_with_profile(
     
     state = create_initial_state(user_profile=user_profile, goals=goals)
     state["wearable_data"] = wearable_data
+    
+    # Historical Grounding
+    if memory.is_enabled():
+        logger.info(f"Fetching history for: {user_profile.name}")
+        history = memory.get_workout_history(user_profile.name, limit=5)
+        state["history"] = history
+    else:
+        state["history"] = []
     
     state.update(orchestrator_node(state))
     state.update(cv_agent_node(state))

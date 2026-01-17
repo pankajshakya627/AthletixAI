@@ -58,38 +58,59 @@ class UserMemory:
             # Upsert (insert or update)
             result = self.supabase.table("users").upsert(
                 user_data,
-                on_conflict="user_id"
+                on_conflict="name" # Changed to name or ensure user_id exists
             ).execute()
             
-            user_id = result.data[0]["user_id"] if result.data else None
-            logger.info(f"✓ Saved user profile: {user_id}")
-            return user_id
+            logger.info(f"✓ Saved user profile to Supabase")
+            return user_data.get("name")
 
         
         except Exception as e:
             logger.error(f"Error saving user profile: {e}")
             return None
     
-    def load_user_profile(self, user_id: str) -> Optional[UserProfile]:
-        """Load user profile from Supabase."""
+    def load_user_profile(self, name: str) -> Optional[UserProfile]:
+        """Load user profile from Supabase by name."""
         if not self.is_enabled():
             return None
         
         try:
-            result = self.supabase.table("users").select("*").eq("user_id", user_id).execute()
+            result = self.supabase.table("users").select("*").eq("name", name).execute()
             
             if not result.data:
-                logger.warning(f"User profile not found: {user_id}")
+                logger.warning(f"User profile not found: {name}")
                 return None
             
             user_data = result.data[0]
-            # Convert to UserProfile (simplified - adjust based on your UserProfile model)
-            logger.info(f"✓ Loaded user profile: {user_id}")
-            return None  # TODO: Convert dict to UserProfile model
+            
+            # Standardize gender and experience_level
+            if "gender" in user_data:
+                user_data["gender"] = user_data["gender"].lower()
+            if "experience_level" in user_data:
+                user_data["experience_level"] = user_data["experience_level"].lower()
+            
+            # Map SQL columns to UserProfile fields if they differ
+            # (Assuming SQL columns match UserProfile field names based on save_user_profile)
+            
+            profile = UserProfile(**user_data)
+            logger.info(f"✓ Loaded user profile: {name}")
+            return profile
         
         except Exception as e:
             logger.error(f"Error loading user profile: {e}")
             return None
+
+    def list_all_profiles(self) -> list[dict]:
+        """List all user profiles from Supabase."""
+        if not self.is_enabled():
+            return []
+            
+        try:
+            result = self.supabase.table("users").select("name, experience_level, primary_goal").execute()
+            return result.data if result.data else []
+        except Exception as e:
+            logger.error(f"Error listing profiles: {e}")
+            return []
     
     # ========================================================================
     # TRAINING PROGRAM METHODS

@@ -11,6 +11,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.main import run_program_with_profile
 from src.models.user_profile import UserProfile
+from src.memory.user_memory import UserMemory
+
+# Initialize Memory
+memory = UserMemory()
 
 # Page Config
 st.set_page_config(
@@ -66,6 +70,13 @@ def load_profiles():
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/weightlifting.png", width=80)
     st.title("FitAI Coach")
+    
+    # Connection Status
+    if memory.is_enabled():
+        st.success("☁️ Cloud Sync Active")
+    else:
+        st.warning("⚠️ Local Storage Only")
+        
     st.markdown("---")
     
     # Create New Profile Section
@@ -100,6 +111,12 @@ with st.sidebar:
                 
                 with open(file_path, 'w') as f:
                     json.dump(new_profile_data, f, indent=4)
+                
+                # Cloud Sync
+                if memory.is_enabled():
+                    profile_obj = UserProfile(**new_profile_data)
+                    memory.save_user_profile(profile_obj)
+                    st.success(f"Profile synced to Cloud!")
                 
                 st.success(f"Created {filename}!")
                 st.rerun()
@@ -139,6 +156,13 @@ with st.sidebar:
                 # Save to session state
                 st.session_state["program_state"] = state
                 st.session_state["generated_for"] = selected_filename
+                
+                # Auto-save to Supabase
+                if memory.is_enabled() and state.get("program"):
+                    user_name = selected_profile_data.get("name")
+                    memory.save_training_program(user_name, state["program"])
+                    st.toast("💾 Program saved to Cloud history!")
+                
                 st.success("Program Generated Successfully!")
                 st.rerun() # Refresh to show results
                 
