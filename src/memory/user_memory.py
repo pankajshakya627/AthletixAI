@@ -265,3 +265,51 @@ class UserMemory:
         except Exception as e:
             logger.error(f"Error fetching workout history: {e}")
             return []
+
+    # ========================================================================
+    # SEMANTIC SEARCH METHODS
+    # ========================================================================
+
+    def semantic_search_exercises(
+        self,
+        query: str,
+        threshold: float = 0.5,
+        limit: int = 5
+    ) -> list[dict]:
+        """
+        Perform semantic search for exercises using pgvector.
+        
+        Args:
+            query: The search query (e.g., "leg exercises for beginners")
+            threshold: Minimum similarity threshold
+            limit: Maximum number of results
+            
+        Returns:
+            List of matching exercises with similarity scores
+        """
+        if not self.is_enabled():
+            logger.warning("Supabase memory disabled. Semantic search unavailable.")
+            return []
+            
+        try:
+            from src.utils.openai_client import get_embedding
+            
+            # 1. Generate embedding for query
+            query_embedding = get_embedding(query)
+            
+            # 2. Call the 'match_exercises' RPC in Supabase
+            result = self.supabase.rpc(
+                "match_exercises",
+                {
+                    "query_embedding": query_embedding,
+                    "match_threshold": threshold,
+                    "match_count": limit
+                }
+            ).execute()
+            
+            return result.data if result.data else []
+            
+        except Exception as e:
+            logger.error(f"Error performing semantic search: {e}")
+            return []
+
