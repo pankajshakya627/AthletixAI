@@ -347,17 +347,27 @@ def run_program_generation(
 
 
 def display_program_only(state: dict) -> None:
-    """Display program and coaching results with tutorial URLs."""
-    print("\n" + "=" * 70)
-    print("🏋️ TRAINING PROGRAM")
-    print("=" * 70)
+    """Display program and coaching results in a table format."""
+    print("\n" + "=" * 80)
+    print("🏋️ TRAINING PROGRAM".center(80))
+    print("=" * 80)
     
     # Coaching message
     coaching_message = state.get("coaching_message")
     if coaching_message:
         print("\n📣 COACHING MESSAGE:")
-        print("-" * 70)
-        print(coaching_message)
+        print("-" * 80)
+        # Simple word wrap for coaching message
+        words = coaching_message.split()
+        line = ""
+        for word in words:
+            if len(line) + len(word) + 1 > 80:
+                print(line)
+                line = word
+            else:
+                line = line + " " + word if line else word
+        if line:
+            print(line)
     
     # Daily tips
     tips = state.get("daily_tips", [])
@@ -370,28 +380,55 @@ def display_program_only(state: dict) -> None:
     program = state.get("program")
     if program:
         print("\n📋 PROGRAM DETAILS:")
-        print("-" * 70)
-        print(f"  Program: {program.program_name}")
+        print("-" * 80)
+        print(f"  Program:  {program.program_name}")
         print(f"  Duration: {program.program_length_weeks} weeks")
-        print(f"  Split: {program.weekly_split}")
+        print(f"  Split:    {program.weekly_split}")
         
-        # Show all workouts with exercises and URLs
+        # Show all workouts with exercises in a table
         if program.weekly_schedules:
             week = program.weekly_schedules[0]
             print(f"\n  Week 1 Workouts:")
+            
             for workout in week.workouts:
                 print(f"\n    📆 {workout.day_name}: {workout.focus}")
-                print(f"    Exercises ({len(workout.exercises)} total):")
+                
+                # Table Header
+                print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+                print("    " + f"| {'Exercise':<30} | {'Sets':<6} | {'Reps':<12} | {'Resources':<40} |")
+                print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+                
                 for ex in workout.exercises:
-                    # Show exercise with sets/reps
-                    print(f"        • {ex.name}: {ex.sets}x{ex.reps}")
-                    # Show tutorial URL if available
+                    # Prepare resource lines
+                    resources = []
                     if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
-                        print(f"          📺 Tutorial: {ex.tutorial_url}")
+                        resources.append(f"📺 Tutorial")
+                        resources.append(ex.tutorial_url)
                     if hasattr(ex, 'video_url') and ex.video_url:
-                        print(f"          🎬 Video: {ex.video_url}")
-    
-    print("\n" + "=" * 70 + "\n")
+                        resources.append(f"🎬 Video")
+                        resources.append(ex.video_url)
+                    
+                    # If no resources, ensure at least one empty line
+                    if not resources:
+                        resources = [""]
+                    
+                    # Print first line with exercise info
+                    res_line = resources[0] if resources else ""
+                    # Truncate resource if too long for one line, technically we should wrap but simple crop is safer for table alignment
+                    if len(res_line) > 40: res_line = res_line[:37] + "..."
+                    
+                    print("    " + f"| {ex.name[:30]:<30} | {str(ex.sets):<6} | {str(ex.reps)[:12]:<12} | {res_line:<40} |")
+                    
+                    # Print remaining resource lines
+                    for i in range(1, len(resources)):
+                        res_line = resources[i]
+                        if len(res_line) > 40: res_line = res_line[:37] + "..."
+                        print("    " + f"| {'':<30} | {'':<6} | {'':<12} | {res_line:<40} |")
+                    
+                    # Row separator
+                    print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
+
+    print("\n" + "=" * 80 + "\n")
 
 
 def run_program_with_profile(

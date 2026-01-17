@@ -1,0 +1,15 @@
+{
+    "user_id": "u_ammm",
+    "name": "AMMM",
+    "age": 25,
+    "weight_kg": 70.0,
+    "height_cm": 168.0,
+    "gender": "male",
+    "experience_level": "intermediate",
+    "primary_goal": "Weight Loss",
+    "medical_conditions": [],
+    "injuries": [],
+    "equipment_access": [
+        "Gym"
+    ]
+}

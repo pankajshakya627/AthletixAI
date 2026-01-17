@@ -68,7 +68,44 @@ with st.sidebar:
     st.title("FitAI Coach")
     st.markdown("---")
     
-    st.header("👤 User Profile")
+    # Create New Profile Section
+    with st.expander("➕ Create New Profile"):
+        with st.form("create_profile_form"):
+            new_name = st.text_input("Name")
+            new_age = st.number_input("Age", min_value=10, max_value=100, value=30)
+            new_weight = st.number_input("Weight (kg)", min_value=30.0, value=70.0)
+            new_height = st.number_input("Height (cm)", min_value=100.0, value=175.0)
+            new_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+            new_exp = st.selectbox("Experience", ["Beginner", "Intermediate", "Advanced"])
+            new_goal = st.selectbox("Goal", ["Muscle Building", "Weight Loss", "Strength", "General Fitness"])
+            
+            submitted = st.form_submit_button("Save Profile")
+            if submitted and new_name:
+                filename = f"user_{new_name.lower().replace(' ', '_')}.json"
+                file_path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), filename)
+                
+                new_profile_data = {
+                    "user_id": f"u_{new_name.lower().replace(' ', '_')}",  # changed from id
+                    "name": new_name,
+                    "age": new_age,
+                    "weight_kg": new_weight,  # changed from weight
+                    "height_cm": new_height,  # changed from height
+                    "gender": new_gender.lower(),  # lowercase
+                    "experience_level": new_exp.lower(),  # lowercase
+                    "primary_goal": new_goal,
+                    "medical_conditions": [],
+                    "injuries": [],
+                    "equipment_access": ["Gym"]
+                }
+                
+                with open(file_path, 'w') as f:
+                    json.dump(new_profile_data, f, indent=4)
+                
+                st.success(f"Created {filename}!")
+                st.rerun()
+
+    st.markdown("---")
+    st.header("👤 Select Profile")
     
     profiles = load_profiles()
     if not profiles:
@@ -76,7 +113,7 @@ with st.sidebar:
         st.stop()
         
     selected_filename = st.selectbox(
-        "Select Profile",
+        "Choose User",
         options=list(profiles.keys()),
         index=0
     )
@@ -180,35 +217,40 @@ else:
                     st.markdown(f"### 🔥 Focus: {workout.focus}")
                     st.write(f"⏱️ **Duration:** ~{workout.estimated_duration_minutes} mins")
                     
-                    # Prepare table data
-                    table_data = []
-                    for ex in workout.exercises:
-                        # Format Resources Links
-                        links = []
-                        if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
-                            links.append(f"[📖 Tutorial]({ex.tutorial_url})")
-                        if hasattr(ex, 'video_url') and ex.video_url:
-                            links.append(f"[🎬 Video]({ex.video_url})")
-                        
-                        link_str = " | ".join(links) if links else "Searching..."
-                        
-                        table_data.append({
-                            "Exercise": ex.name,
-                            "Sets": ex.sets,
-                            "Reps": ex.reps,
-                            "Resources": link_str
-                        })
+                    # CSS for table
+                    table_css = """
+                    <style>
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: #f2f2f2;
+                    }
+                    </style>
+                    """
+                    st.markdown(table_css, unsafe_allow_html=True)
                     
-                    # Display as table
-                    st.markdown("#### Exercises")
-                    
-                    # Custom HTML table for better link rendering than st.dataframe
-                    # st.dataframe handles links poorly sometimes
-                    
-                    header = "| Exercise | Sets | Reps | Resources |\n|---|---|---|---|\n"
+                    # Table Header
+                    header = "| Exercise | Sets | Reps | 📖 Tutorial | 🎬 Video | 🖼️ Visual |\n|---|---|---|---|---|---|\n"
                     rows = ""
-                    for row in table_data:
-                        rows += f"| **{row['Exercise']}** | {row['Sets']} | {row['Reps']} | {row['Resources']} |\n"
+                    
+                    for ex in workout.exercises:
+                        # Tutorial Link
+                        tut_link = f"[Link]({ex.tutorial_url})" if hasattr(ex, 'tutorial_url') and ex.tutorial_url else "-"
+                        
+                        # Video Link
+                        vid_link = f"[Watch]({ex.video_url})" if hasattr(ex, 'video_url') and ex.video_url else "-"
+                        
+                        # GIF Link (Visual)
+                        gif_link = f"[View]({ex.gif_url})" if hasattr(ex, 'gif_url') and ex.gif_url else "-"
+                        
+                        rows += f"| **{ex.name}** | {ex.sets} | {ex.reps} | {tut_link} | {vid_link} | {gif_link} |\n"
                     
                     st.markdown(header + rows)
 
