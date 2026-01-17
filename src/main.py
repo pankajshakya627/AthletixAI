@@ -345,7 +345,7 @@ def run_program_generation(
 
 
 def display_program_only(state: dict) -> None:
-    """Display program and coaching results only."""
+    """Display program and coaching results with tutorial URLs."""
     print("\n" + "=" * 70)
     print("🏋️ TRAINING PROGRAM")
     print("=" * 70)
@@ -373,14 +373,21 @@ def display_program_only(state: dict) -> None:
         print(f"  Duration: {program.program_length_weeks} weeks")
         print(f"  Split: {program.weekly_split}")
         
-        # Show first week's workouts
+        # Show all workouts with exercises and URLs
         if program.weekly_schedules:
             week = program.weekly_schedules[0]
             print(f"\n  Week 1 Workouts:")
-            for workout in week.workouts[:3]:
-                print(f"    • {workout.day_name}: {workout.focus}")
-                for ex in workout.exercises[:3]:
-                    print(f"        - {ex.name}: {ex.sets}x{ex.reps}")
+            for workout in week.workouts:
+                print(f"\n    📆 {workout.day_name}: {workout.focus}")
+                print(f"    Exercises ({len(workout.exercises)} total):")
+                for ex in workout.exercises:
+                    # Show exercise with sets/reps
+                    print(f"        • {ex.name}: {ex.sets}x{ex.reps}")
+                    # Show tutorial URL if available
+                    if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
+                        print(f"          📺 Tutorial: {ex.tutorial_url}")
+                    if hasattr(ex, 'video_url') and ex.video_url:
+                        print(f"          🎬 Video: {ex.video_url}")
     
     print("\n" + "=" * 70 + "\n")
 
@@ -397,6 +404,7 @@ def run_program_with_profile(
     from src.agents.cv_agent import cv_agent_node
     from src.agents.wearable_agent import wearable_agent_node
     from src.agents.planner_agent import planner_agent_node
+    from src.agents.research_agent import research_agent_node
     from src.agents.coach_agent import coach_agent_node
     
     logger.info(f"Running program for: {user_profile.name}")
@@ -411,6 +419,7 @@ def run_program_with_profile(
     state.update(cv_agent_node(state))
     state.update(wearable_agent_node(state))
     state.update(planner_agent_node(state))
+    state.update(research_agent_node(state))  # Research exercises for URLs
     state.update(coach_agent_node(state))
     
     return state
