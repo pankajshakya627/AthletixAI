@@ -82,6 +82,17 @@ flowchart TB
 
 ---
 
+## 📸 Screenshots
+
+> _Run the app to see the interactive dashboard!_
+
+|                      **Profile Creation**                      |                       **Workout Dashboard**                       |
+| :------------------------------------------------------------: | :---------------------------------------------------------------: |
+|          Create/Edit profiles directly in the sidebar          |             View clear, resource-rich workout tables              |
+| ![Profile](https://placehold.co/400x300?text=Profile+Creation) | ![Dashboard](https://placehold.co/400x300?text=Workout+Dashboard) |
+
+---
+
 ## 🚀 Installation
 
 ```bash
