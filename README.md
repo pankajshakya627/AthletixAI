@@ -88,12 +88,13 @@ flowchart TB
 
 ## 📸 Screenshots
 
-> _Run the app to see the interactive dashboard!_
+<div align="center">
 
-|                      **Profile Creation**                      |                       **Workout Dashboard**                       |
-| :------------------------------------------------------------: | :---------------------------------------------------------------: |
-|          Create/Edit profiles directly in the sidebar          |             View clear, resource-rich workout tables              |
-| ![Profile](https://placehold.co/400x300?text=Profile+Creation) | ![Dashboard](https://placehold.co/400x300?text=Workout+Dashboard) |
+![AthletixAI Dashboard - Profile creation sidebar and welcome screen](docs/images/dashboard.png)
+
+_AI Fitness Coach dashboard showing profile selection and welcome screen._
+
+</div>
 
 ---
 
