@@ -502,9 +502,52 @@ else:
                     </div>
                     ''', unsafe_allow_html=True)
                     
-                    # Build HTML table
+                    # Build HTML table with inline styles for better rendering
                     table_html = '''
-                    <table class="styled-table">
+                    <style>
+                        .workout-table {
+                            width: 100%;
+                            border-collapse: separate;
+                            border-spacing: 0;
+                            background: #1e293b;
+                            border-radius: 12px;
+                            overflow: hidden;
+                            border: 1px solid #334155;
+                            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                        }
+                        .workout-table th {
+                            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+                            color: #f1f5f9;
+                            font-weight: 600;
+                            padding: 12px 16px;
+                            text-align: left;
+                            text-transform: uppercase;
+                            font-size: 11px;
+                            letter-spacing: 0.05em;
+                        }
+                        .workout-table td {
+                            padding: 10px 16px;
+                            border-bottom: 1px solid #334155;
+                            color: #f1f5f9;
+                            font-size: 14px;
+                        }
+                        .workout-table tr:last-child td {
+                            border-bottom: none;
+                        }
+                        .workout-table tr:hover td {
+                            background: rgba(99, 102, 241, 0.1);
+                        }
+                        .workout-table a {
+                            color: #22d3ee;
+                            text-decoration: none;
+                            font-weight: 500;
+                        }
+                        .workout-table a:hover {
+                            color: #6366f1;
+                            text-decoration: underline;
+                        }
+                    </style>
+                    <table class="workout-table">
                         <thead>
                             <tr>
                                 <th>Exercise</th>
@@ -535,7 +578,10 @@ else:
                         '''
                     
                     table_html += '</tbody></table>'
-                    st.markdown(table_html, unsafe_allow_html=True)
+                    
+                    # Calculate dynamic height based on number of exercises
+                    table_height = 60 + (len(workout.exercises) * 45)
+                    st.components.v1.html(table_html, height=table_height, scrolling=True)
 
     # --- TAB 3: SCHEDULE ---
     with tab_schedule:
