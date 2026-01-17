@@ -502,9 +502,22 @@ else:
                     </div>
                     ''', unsafe_allow_html=True)
                     
-                    # Build HTML table with inline styles for better rendering
-                    table_html = '''
-                    <style>
+                    # =================================================================
+                    # WORKOUT TABLE COMPONENT
+                    # =================================================================
+                    # Uses st.components.v1.html() instead of st.markdown() because:
+                    # 1. st.markdown(unsafe_allow_html=True) has inconsistent behavior
+                    #    with complex HTML inside Streamlit tabs.
+                    # 2. components.html() creates an isolated iframe that properly
+                    #    renders all CSS and HTML without interference from Streamlit's
+                    #    internal styling.
+                    # 3. Inline styles are required because the iframe doesn't inherit
+                    #    parent page CSS - this is a Streamlit limitation, not a
+                    #    design choice.
+                    # =================================================================
+                    
+                    # CSS extracted to constant for maintainability
+                    WORKOUT_TABLE_CSS = """
                         .workout-table {
                             width: 100%;
                             border-collapse: separate;
@@ -531,12 +544,8 @@ else:
                             color: #f1f5f9;
                             font-size: 14px;
                         }
-                        .workout-table tr:last-child td {
-                            border-bottom: none;
-                        }
-                        .workout-table tr:hover td {
-                            background: rgba(99, 102, 241, 0.1);
-                        }
+                        .workout-table tr:last-child td { border-bottom: none; }
+                        .workout-table tr:hover td { background: rgba(99, 102, 241, 0.1); }
                         .workout-table a {
                             color: #22d3ee;
                             text-decoration: none;
@@ -546,7 +555,17 @@ else:
                             color: #6366f1;
                             text-decoration: underline;
                         }
-                    </style>
+                        /* Responsive container with max-height fallback */
+                        .table-container {
+                            max-height: 600px;
+                            overflow-y: auto;
+                        }
+                    """
+                    
+                    # Build table HTML
+                    table_html = f"""
+                    <style>{WORKOUT_TABLE_CSS}</style>
+                    <div class="table-container">
                     <table class="workout-table">
                         <thead>
                             <tr>
@@ -559,14 +578,14 @@ else:
                             </tr>
                         </thead>
                         <tbody>
-                    '''
+                    """
                     
                     for ex in workout.exercises:
                         tut_link = f'<a href="{ex.tutorial_url}" target="_blank">Tutorial</a>' if hasattr(ex, 'tutorial_url') and ex.tutorial_url else '-'
                         vid_link = f'<a href="{ex.video_url}" target="_blank">Watch</a>' if hasattr(ex, 'video_url') and ex.video_url else '-'
                         gif_link = f'<a href="{ex.gif_url}" target="_blank">View</a>' if hasattr(ex, 'gif_url') and ex.gif_url else '-'
                         
-                        table_html += f'''
+                        table_html += f"""
                             <tr>
                                 <td><strong>{ex.name}</strong></td>
                                 <td>{ex.sets}</td>
@@ -575,12 +594,15 @@ else:
                                 <td>{vid_link}</td>
                                 <td>{gif_link}</td>
                             </tr>
-                        '''
+                        """
                     
-                    table_html += '</tbody></table>'
+                    table_html += '</tbody></table></div>'
                     
-                    # Calculate dynamic height based on number of exercises
-                    table_height = 60 + (len(workout.exercises) * 45)
+                    # Height calculation: base header (50px) + per-row estimate (42px)
+                    # Clamped to min 150px and max 650px for consistent UX
+                    calculated_height = 50 + (len(workout.exercises) * 42)
+                    table_height = max(150, min(calculated_height, 650))
+                    
                     st.components.v1.html(table_html, height=table_height, scrolling=True)
 
     # --- TAB 3: SCHEDULE ---
