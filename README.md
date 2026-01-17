@@ -88,12 +88,13 @@ flowchart TB
 
 ## 📸 Screenshots
 
-> _Run the app to see the interactive dashboard!_
+<div align="center">
 
-|                      **Profile Creation**                      |                       **Workout Dashboard**                       |
-| :------------------------------------------------------------: | :---------------------------------------------------------------: |
-|          Create/Edit profiles directly in the sidebar          |             View clear, resource-rich workout tables              |
-| ![Profile](https://placehold.co/400x300?text=Profile+Creation) | ![Dashboard](https://placehold.co/400x300?text=Workout+Dashboard) |
+![AthletixAI Dashboard - Profile creation sidebar and welcome screen](docs/images/dashboard.png)
+
+_AI Fitness Coach dashboard showing profile selection and welcome screen._
+
+</div>
 
 ---
 
@@ -151,6 +152,57 @@ python scripts/seed_exercises_vector.py
 ```
 
 _This generates OpenAI embeddings for 100+ exercises and saves them to your cloud database._
+
+---
+
+## 🧩 Component Guide
+
+AthletixAI is built as a modular system where each agent handles a specific domain. Here is how to use each component:
+
+### 🥗 Nutrition AI
+
+**Goal**: Analyze caloric and macronutrient content from food images.
+
+- **How to use**: In the Streamlit UI, navigate to the "Nutrition" section and upload a photo of your meal.
+- **Output**: The system returns a breakdown of Protein (g), Carbs (g), Fats (g), and Total Calories, optimized based on your profile's goal (e.g., "Muscle Gain" vs "Weight Loss").
+
+### 🏋️ Training Planner
+
+**Goal**: Generate high-volume, personalized workout programs.
+
+- **How to use**: Select your profile from the sidebar and click **"🚀 Generate Program"**.
+- **Intelligence**: The planner automatically detects your **experience level** (Beginner, Intermediate, Advanced) and selects appropriate exercises from the 100+ exercise library. It prioritizes compound movements (Squats, Bench) for efficiency.
+
+### 🔍 Exercise Research
+
+**Goal**: Provide visual and educational resources for every exercise in your plan.
+
+- **How to use**: View your generated program in the dashboard. Click on any exercise name or the links in the **Tutorial**, **Video**, or **GIF** columns.
+- **Tech**: Powered by **Tavily**, it fetches live URLs to ensure you always have the best form guidance.
+
+### 🗄️ Long-Term Memory
+
+**Goal**: Cross-device persistence and historical progress tracking.
+
+- **How to use**: Look for the **"☁️ Cloud Sync Active"** message in the sidebar. Any profile you create or program you generate is automatically saved to Supabase.
+- **Grounding**: When generating a new program, the AI automatically fetches your **last 5 workouts** to adjust volume or substitute exercises you struggled with.
+
+### 🧠 Semantic Search
+
+**Goal**: Find exercises based on natural language intent.
+
+- **How to use**: Use the dedicated testing script to explore the library:
+  ```bash
+  python tests/verify_semantic_search.py "leg exercises for seniors"
+  ```
+- **Fuzzy Matching**: You don't need exact names. You can search for concepts like "core stability", "injury prevention", or "explosive power".
+
+### ⌚ Wearable Integration (Beta)
+
+**Goal**: Adjust training intensity based on recovery data.
+
+- **How to use**: (Simulation mode) Provide a `wearable_data.json` file.
+- **Output**: The agent analyzes HRV and Sleep scores to suggest whether it's a "Push Day" or a "Rest Day".
 
 ---
 
@@ -223,11 +275,9 @@ AthletixAI/
 
 ## 🔒 Safety
 
-- Input validation (age, weight, height ranges)
-- Weekly volume caps per muscle group
-- Injury-aware exercise modifications
-- Conservative progression (max 10%/week)
-- Automatic health disclaimers
+- **Validation**: Strict input checks for age, weight, and height.
+- **Volume Caps**: Maximum weekly set limits per muscle group to prevent overtraining.
+- **Injury Aware**: Automatically modifies programs based on the injuries listed in your profile.
 
 ## 🛠️ Tech Stack
 

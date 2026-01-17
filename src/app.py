@@ -24,28 +24,257 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS - Modern Design System
 st.markdown("""
 <style>
-    .stButton button {
+    /* ==========================================================================
+       ROOT VARIABLES
+       ========================================================================== */
+    :root {
+        --primary: #6366f1;       /* Indigo */
+        --primary-dark: #4f46e5;
+        --secondary: #22d3ee;     /* Cyan accent */
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg-dark: #0f172a;
+        --bg-card: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        --gradient-header: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+    }
+    
+    /* ==========================================================================
+       GLOBAL STYLES
+       ========================================================================== */
+    .stApp {
+        background: var(--bg-dark);
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        border-right: 1px solid var(--border-color);
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown h1,
+    [data-testid="stSidebar"] .stMarkdown h2,
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: var(--text-primary) !important;
+    }
+    
+    /* ==========================================================================
+       BUTTONS
+       ========================================================================== */
+    .stButton > button {
         width: 100%;
-        background-color: #FF4B4B;
-        color: white;
-        font-weight: bold;
+        background: var(--gradient-primary) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 1.5rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4) !important;
     }
-    .workout-day-card {
-        padding: 20px;
-        border-radius: 10px;
-        background-color: #f0f2f6;
-        margin-bottom: 20px;
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5) !important;
     }
-    .exercise-link {
+    
+    /* ==========================================================================
+       CARDS & CONTAINERS
+       ========================================================================== */
+    .modern-card {
+        background: var(--bg-card);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    
+    .gradient-header {
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+    }
+    
+    /* ==========================================================================
+       METRICS & STATS
+       ========================================================================== */
+    .metric-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .metric-label {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* ==========================================================================
+       TABLES
+       ========================================================================== */
+    .styled-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: var(--bg-card);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    
+    .styled-table th {
+        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 1rem;
+        text-align: left;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+    
+    .styled-table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .styled-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .styled-table tr:hover td {
+        background: rgba(99, 102, 241, 0.1);
+    }
+    
+    /* ==========================================================================
+       LINKS
+       ========================================================================== */
+    .styled-table a {
+        color: var(--secondary) !important;
         text-decoration: none;
-        color: #ff4b4b;
         font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    
+    .styled-table a:hover {
+        color: var(--primary) !important;
+        text-decoration: underline;
+    }
+    
+    /* ==========================================================================
+       TABS
+       ========================================================================== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 40px;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        background: transparent;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: var(--gradient-primary) !important;
+        color: white !important;
+    }
+    
+    /* ==========================================================================
+       EXPANDERS
+       ========================================================================== */
+    .streamlit-expanderHeader {
+        background: var(--bg-card) !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border-color) !important;
+    }
+    
+    /* ==========================================================================
+       STATUS BADGES
+       ========================================================================== */
+    .badge-success {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-warning {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    /* ==========================================================================
+       ANIMATIONS
+       ========================================================================== */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    /* ==========================================================================
+       SCROLLBAR
+       ========================================================================== */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--bg-dark);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 def load_profiles():
@@ -176,19 +405,37 @@ with st.sidebar:
 
 if "program_state" not in st.session_state:
     # Landing State
-    st.title("💪 Welcome to AI Fitness Coach")
-    st.markdown("""
-    Your personalized AI coach will create a fully customized workout plan based on your:
+    st.markdown('<h1 class="gradient-header">💪 Welcome to AI Fitness Coach</h1>', unsafe_allow_html=True)
     
-    *   **Experience Level** (Beginner to Advanced)
-    *   **Goals** (Muscle Gain, Strength, Weight Loss)
-    *   **Equipment Available**
-    *   **Injuries & Constraints**
+    st.markdown('''
+    <div class="modern-card animate-fade-in">
+        <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.8;">
+            Your personalized AI coach will create a fully customized workout plan based on your:
+        </p>
+        <ul style="color: #f1f5f9; list-style: none; padding-left: 0;">
+            <li style="margin: 0.5rem 0;">✨ <strong>Experience Level</strong> – Beginner to Elite</li>
+            <li style="margin: 0.5rem 0;">🎯 <strong>Goals</strong> – Muscle Gain, Strength, Weight Loss</li>
+            <li style="margin: 0.5rem 0;">🏋️ <strong>Equipment Access</strong> – Home, Gym, or Bodyweight</li>
+            <li style="margin: 0.5rem 0;">🩹 <strong>Injuries & Constraints</strong> – Personalized modifications</li>
+        </ul>
+    </div>
+    ''', unsafe_allow_html=True)
     
-    👈 **Select a profile on the left and click 'Generate Program' to start!**
-    """)
+    st.markdown('''
+    <div class="modern-card" style="border-left: 4px solid #6366f1;">
+        <p style="color: #f1f5f9; margin: 0;">
+            👈 <strong>Select a profile on the left and click "Generate Program"</strong> to start!
+        </p>
+    </div>
+    ''', unsafe_allow_html=True)
     
-    st.info("💡 **Did you know?** The AI research agent searches the web for the best tutorials for every exercise in your plan.")
+    st.markdown('''
+    <div class="modern-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%);">
+        <p style="color: #22d3ee; margin: 0;">
+            💡 <strong>Did you know?</strong> The AI research agent searches the web for the best tutorials for every exercise in your plan.
+        </p>
+    </div>
+    ''', unsafe_allow_html=True)
 
 else:
     # Result State
@@ -238,45 +485,57 @@ else:
             for i, workout_tab in enumerate(workout_tabs):
                 workout = week.workouts[i]
                 with workout_tab:
-                    st.markdown(f"### 🔥 Focus: {workout.focus}")
-                    st.write(f"⏱️ **Duration:** ~{workout.estimated_duration_minutes} mins")
+                    st.markdown(f'''
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="metric-card" style="flex: 1;">
+                            <div class="metric-value">🔥</div>
+                            <div class="metric-label">{workout.focus}</div>
+                        </div>
+                        <div class="metric-card" style="flex: 1;">
+                            <div class="metric-value">{workout.estimated_duration_minutes}</div>
+                            <div class="metric-label">Minutes</div>
+                        </div>
+                        <div class="metric-card" style="flex: 1;">
+                            <div class="metric-value">{len(workout.exercises)}</div>
+                            <div class="metric-label">Exercises</div>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
                     
-                    # CSS for table
-                    table_css = """
-                    <style>
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                    }
-                    th, td {
-                        border: 1px solid #ddd;
-                        padding: 8px;
-                        text-align: left;
-                    }
-                    th {
-                        background-color: #f2f2f2;
-                    }
-                    </style>
-                    """
-                    st.markdown(table_css, unsafe_allow_html=True)
-                    
-                    # Table Header
-                    header = "| Exercise | Sets | Reps | 📖 Tutorial | 🎬 Video | 🖼️ Visual |\n|---|---|---|---|---|---|\n"
-                    rows = ""
+                    # Build HTML table
+                    table_html = '''
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Exercise</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>📖 Tutorial</th>
+                                <th>🎬 Video</th>
+                                <th>🖼️ Visual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    '''
                     
                     for ex in workout.exercises:
-                        # Tutorial Link
-                        tut_link = f"[Link]({ex.tutorial_url})" if hasattr(ex, 'tutorial_url') and ex.tutorial_url else "-"
+                        tut_link = f'<a href="{ex.tutorial_url}" target="_blank">Tutorial</a>' if hasattr(ex, 'tutorial_url') and ex.tutorial_url else '-'
+                        vid_link = f'<a href="{ex.video_url}" target="_blank">Watch</a>' if hasattr(ex, 'video_url') and ex.video_url else '-'
+                        gif_link = f'<a href="{ex.gif_url}" target="_blank">View</a>' if hasattr(ex, 'gif_url') and ex.gif_url else '-'
                         
-                        # Video Link
-                        vid_link = f"[Watch]({ex.video_url})" if hasattr(ex, 'video_url') and ex.video_url else "-"
-                        
-                        # GIF Link (Visual)
-                        gif_link = f"[View]({ex.gif_url})" if hasattr(ex, 'gif_url') and ex.gif_url else "-"
-                        
-                        rows += f"| **{ex.name}** | {ex.sets} | {ex.reps} | {tut_link} | {vid_link} | {gif_link} |\n"
+                        table_html += f'''
+                            <tr>
+                                <td><strong>{ex.name}</strong></td>
+                                <td>{ex.sets}</td>
+                                <td>{ex.reps}</td>
+                                <td>{tut_link}</td>
+                                <td>{vid_link}</td>
+                                <td>{gif_link}</td>
+                            </tr>
+                        '''
                     
-                    st.markdown(header + rows)
+                    table_html += '</tbody></table>'
+                    st.markdown(table_html, unsafe_allow_html=True)
 
     # --- TAB 3: SCHEDULE ---
     with tab_schedule:
