@@ -290,6 +290,38 @@ AthletixAI/
 | Frontend      | Streamlit                        |
 | Search        | Tavily API                       |
 
+## 💻 Terminal Commands Reference
+
+Quickly access all essential commands for setting up and running AthletixAI.
+
+### 🛠️ Environment & Setup
+
+| Action                     | Command                                                     |
+| :------------------------- | :---------------------------------------------------------- |
+| **Initialize Environment** | `python -m venv venv && source venv/bin/activate`           |
+| **Install Dependencies**   | `pip install -e ".[dev]" streamlit supabase tqdm`           |
+| **Apply SQL Migrations**   | (Copy content of `migrations/*.sql` to Supabase SQL Editor) |
+
+### 🚀 Running the App
+
+| Component                | Command                                               |
+| :----------------------- | :---------------------------------------------------- |
+| **Main Web UI**          | `streamlit run src/app.py`                            |
+| **Seed Vector DB**       | `python scripts/seed_exercises_vector.py`             |
+| **Verify Vector Search** | `python tests/verify_semantic_search.py "query here"` |
+
+### 💻 Command Line Interface (CLI)
+
+| Mode                 | Command                                                         |
+| :------------------- | :-------------------------------------------------------------- |
+| **Full Mode**        | `python -m src.main --profile user.json --food-images meal.jpg` |
+| **Program Only**     | `python -m src.main --program-only --profile user.json`         |
+| **Nutrition Only**   | `python -m src.main --nutrition-only --food-images meal.jpg`    |
+| **Interactive Mode** | `python -m src.main` (Follow prompts)                           |
+| **Form Analysis**    | `python -m src.main --video-frames frame1.jpg frame2.jpg`       |
+
+---
+
 ## 📝 License
 
 MIT License
