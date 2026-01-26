@@ -67,6 +67,16 @@ class Exercise(BaseModel):
         description="Additional exercise notes"
     )
     
+    # NEW: Detailed exercise information
+    description: Optional[str] = Field(
+        default=None,
+        description="Brief description of the exercise and what it targets"
+    )
+    steps: list[str] = Field(
+        default_factory=list,
+        description="Step-by-step instructions on how to perform the exercise"
+    )
+    
     # NEW: Educational resources from research agent
     tutorial_url: Optional[str] = Field(
         default=None,

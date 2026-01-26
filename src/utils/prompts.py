@@ -150,6 +150,30 @@ CRITICAL REQUIREMENTS:
    - Advanced: Complex movements, high intensity, advanced techniques
    - Elite: Periodized training, sport-specific, competition prep
 
+6. **EXERCISE DETAILS - MANDATORY FOR EVERY EXERCISE:**
+   - **description**: Write a clear, concise 1-2 sentence explanation of:
+     * What the exercise is (movement type)
+     * Primary muscles targeted
+     * Example: "A compound lower body movement that targets the quadriceps, glutes, and hamstrings while building overall leg strength."
+   
+   - **steps**: Provide 3-5 detailed step-by-step instructions covering:
+     * Starting position (stance, grip, body alignment)
+     * The movement execution (concentric phase)
+     * The return/reset (eccentric phase)
+     * Key points to remember
+     * Example for Squat:
+       1. "Stand with feet shoulder-width apart, toes slightly pointed out, bar resting on upper traps"
+       2. "Brace your core, take a deep breath, and begin by pushing hips back and bending knees"
+       3. "Descend until thighs are parallel to ground, keeping chest up and knees tracking over toes"
+       4. "Drive through heels to return to starting position, exhaling as you rise"
+   
+   - **breathing_guide**: Specify the exact breathing pattern using this format:
+     * "Inhale during [eccentric/lengthening phase], exhale during [concentric/exertion phase]"
+     * Examples:
+       - Squat: "Inhale at the top and during descent, exhale powerfully during the ascent"
+       - Bench Press: "Inhale as you lower the bar, exhale as you press up"
+       - Plank: "Breathe naturally and steadily throughout the hold"
+
 Program Structure for EACH workout day:
 - Warmup (3-4 dynamic exercises, 5-10 min)
 - Main workout (6-8 compound/isolation exercises)
@@ -183,7 +207,10 @@ Respond in JSON format:
                             "reps": "<rep range or time>",
                             "rest_seconds": <rest>,
                             "category": "<warmup|main|core|stretch>",
-                            "technique_cues": ["<cue1>", "<cue2>"]
+                            "technique_cues": ["<cue1>", "<cue2>"],
+                            "description": "<brief 1-2 sentence overview of the exercise and target muscles>",
+                            "steps": ["<step 1: starting position>", "<step 2: movement>", "<step 3: return>"],
+                            "breathing_guide": "<e.g., 'Inhale during descent, exhale during push'>"
                         }}
                     ],
                     "estimated_duration_minutes": <total time>

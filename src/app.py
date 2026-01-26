@@ -502,108 +502,90 @@ else:
                     </div>
                     ''', unsafe_allow_html=True)
                     
+                    
                     # =================================================================
-                    # WORKOUT TABLE COMPONENT
-                    # =================================================================
-                    # Uses st.components.v1.html() instead of st.markdown() because:
-                    # 1. st.markdown(unsafe_allow_html=True) has inconsistent behavior
-                    #    with complex HTML inside Streamlit tabs.
-                    # 2. components.html() creates an isolated iframe that properly
-                    #    renders all CSS and HTML without interference from Streamlit's
-                    #    internal styling.
-                    # 3. Inline styles are required because the iframe doesn't inherit
-                    #    parent page CSS - this is a Streamlit limitation, not a
-                    #    design choice.
+                    # WORKOUT EXERCISES - NATIVE STREAMLIT CARDS
+                    # Displays exercises with expandable detailed instructions
                     # =================================================================
                     
-                    # CSS extracted to constant for maintainability
-                    WORKOUT_TABLE_CSS = """
-                        .workout-table {
-                            width: 100%;
-                            border-collapse: separate;
-                            border-spacing: 0;
-                            background: #1e293b;
-                            border-radius: 12px;
-                            overflow: hidden;
-                            border: 1px solid #334155;
-                            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                        }
-                        .workout-table th {
-                            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-                            color: #f1f5f9;
-                            font-weight: 600;
-                            padding: 12px 16px;
-                            text-align: left;
-                            text-transform: uppercase;
-                            font-size: 11px;
-                            letter-spacing: 0.05em;
-                        }
-                        .workout-table td {
-                            padding: 10px 16px;
-                            border-bottom: 1px solid #334155;
-                            color: #f1f5f9;
-                            font-size: 14px;
-                        }
-                        .workout-table tr:last-child td { border-bottom: none; }
-                        .workout-table tr:hover td { background: rgba(99, 102, 241, 0.1); }
-                        .workout-table a {
-                            color: #22d3ee;
-                            text-decoration: none;
-                            font-weight: 500;
-                        }
-                        .workout-table a:hover {
-                            color: #6366f1;
-                            text-decoration: underline;
-                        }
-                        /* Responsive container with max-height fallback */
-                        .table-container {
-                            max-height: 600px;
-                            overflow-y: auto;
-                        }
-                    """
-                    
-                    # Build table HTML
-                    table_html = f"""
-                    <style>{WORKOUT_TABLE_CSS}</style>
-                    <div class="table-container">
-                    <table class="workout-table">
-                        <thead>
-                            <tr>
-                                <th>Exercise</th>
-                                <th>Sets</th>
-                                <th>Reps</th>
-                                <th>📖 Tutorial</th>
-                                <th>🎬 Video</th>
-                                <th>🖼️ Visual</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                    """
-                    
-                    for ex in workout.exercises:
-                        tut_link = f'<a href="{ex.tutorial_url}" target="_blank">Tutorial</a>' if hasattr(ex, 'tutorial_url') and ex.tutorial_url else '-'
-                        vid_link = f'<a href="{ex.video_url}" target="_blank">Watch</a>' if hasattr(ex, 'video_url') and ex.video_url else '-'
-                        gif_link = f'<a href="{ex.gif_url}" target="_blank">View</a>' if hasattr(ex, 'gif_url') and ex.gif_url else '-'
+                    for idx, ex in enumerate(workout.exercises, 1):
+                        # Exercise header with name, sets, reps
+                        col_name, col_sets, col_reps = st.columns([3, 1, 1])
+                        with col_name:
+                            st.markdown(f"### {idx}. {ex.name}")
+                        with col_sets:
+                            st.metric("Sets", ex.sets)
+                        with col_reps:
+                            st.metric("Reps", ex.reps)
                         
-                        table_html += f"""
-                            <tr>
-                                <td><strong>{ex.name}</strong></td>
-                                <td>{ex.sets}</td>
-                                <td>{ex.reps}</td>
-                                <td>{tut_link}</td>
-                                <td>{vid_link}</td>
-                                <td>{gif_link}</td>
-                            </tr>
-                        """
-                    
-                    table_html += '</tbody></table></div>'
-                    
-                    # Height calculation: base header (50px) + per-row estimate (42px)
-                    # Clamped to min 150px and max 650px for consistent UX
-                    calculated_height = 50 + (len(workout.exercises) * 42)
-                    table_height = max(150, min(calculated_height, 650))
-                    
-                    st.components.v1.html(table_html, height=table_height, scrolling=True)
+                        # Expandable details section
+                        with st.expander("📖 View Instructions & Details"):
+                            # Description (show placeholder if missing)
+                            if hasattr(ex, 'description') and ex.description:
+                                st.markdown(f"**About this exercise:** {ex.description}")
+                            else:
+                                st.caption("_No description available. Generate a new program to see detailed instructions._")
+                            
+                            st.markdown("")
+                            
+                            # Step-by-step instructions (show placeholder if missing)
+                            st.markdown("**📋 How to Perform:**")
+                            if hasattr(ex, 'steps') and ex.steps:
+                                for step_idx, step in enumerate(ex.steps, 1):
+                                    st.markdown(f"{step_idx}. {step}")
+                            else:
+                                st.caption("_Step-by-step instructions will appear here when a new program is generated._")
+                            
+                            st.markdown("")
+                            
+                            # Breathing guide (show placeholder if missing)
+                            st.markdown("**💨 Breathing:**")
+                            if hasattr(ex, 'breathing_guide') and ex.breathing_guide:
+                                st.markdown(f"{ex.breathing_guide}")
+                            else:
+                                st.caption("_Breathing guide will appear here when a new program is generated._")
+                            
+                            st.markdown("")
+                            
+                            # Technique cues - ALWAYS show if available
+                            if ex.technique_cues:
+                                st.markdown("**✅ Key Technique Cues:**")
+                                for cue in ex.technique_cues:
+                                    st.markdown(f"• {cue}")
+                                st.markdown("")
+                            
+                            # Common mistakes (from research agent)
+                            if hasattr(ex, 'common_mistakes') and ex.common_mistakes:
+                                st.markdown("**⚠️ Common Mistakes to Avoid:**")
+                                for mistake in ex.common_mistakes:
+                                    st.markdown(f"• {mistake}")
+                                st.markdown("")
+                            
+                            # Resource links
+                            st.markdown("**🔗 External Resources:**")
+                            link_cols = st.columns(3)
+                            has_links = False
+                            
+                            if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
+                                with link_cols[0]:
+                                    st.markdown(f"[📚 Tutorial Article]({ex.tutorial_url})")
+                                has_links = True
+                            if hasattr(ex, 'video_url') and ex.video_url:
+                                with link_cols[1]:
+                                    st.markdown(f"[🎬 Video Demo]({ex.video_url})")
+                                has_links = True
+                            if hasattr(ex, 'gif_url') and ex.gif_url:
+                                with link_cols[2]:
+                                    st.markdown(f"[🖼️ GIF Animation]({ex.gif_url})")
+                                has_links = True
+                            
+                            if not has_links:
+                                st.caption("_No external resources available for this exercise._")
+                        
+                        # Visual separator between exercises
+                        if idx < len(workout.exercises):
+                            st.divider()
+
 
     # --- TAB 3: SCHEDULE ---
     with tab_schedule:

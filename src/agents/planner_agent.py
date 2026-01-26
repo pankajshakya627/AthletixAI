@@ -270,6 +270,9 @@ def _parse_program(data: dict) -> TrainingProgram:
                     rest_seconds=ex_data.get("rest_seconds", ex_data.get("rest", 90)),
                     weight_suggestion=ex_data.get("weight_suggestion"),
                     technique_cues=ex_data.get("technique_cues", ex_data.get("cues", [])),
+                    description=ex_data.get("description"),
+                    steps=ex_data.get("steps", []),
+                    breathing_guide=ex_data.get("breathing_guide"),
                 ))
             
             workouts.append(DailyWorkout(
