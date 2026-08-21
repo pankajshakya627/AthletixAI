@@ -280,14 +280,35 @@ class UserMemory:
     
     def get_workout_history(
         self,
-        user_id: str,
+        user_name_or_id: str,
         limit: int = 10
     ) -> list[dict]:
-        """Get user's recent workout history."""
+        """Get user's recent workout history.
+        
+        Args:
+            user_name_or_id: Either the user's name (string) or their UUID.
+                             If a name is passed, we lookup the UUID first.
+            limit: Maximum number of workouts to return.
+        """
         if not self.is_enabled():
             return []
         
         try:
+            # Resolve user_id by name if it doesn't look like a UUID
+            user_id = user_name_or_id
+            if not self._is_valid_uuid(user_name_or_id):
+                result = self.supabase.table("users")\
+                    .select("user_id")\
+                    .eq("name", user_name_or_id)\
+                    .limit(1)\
+                    .execute()
+                
+                if not result.data:
+                    logger.warning(f"User '{user_name_or_id}' not found in database. No history.")
+                    return []
+                
+                user_id = result.data[0]["user_id"]
+            
             result = self.supabase.table("workout_history")\
                 .select("*")\
                 .eq("user_id", user_id)\

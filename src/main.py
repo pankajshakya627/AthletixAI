@@ -474,9 +474,9 @@ def run_program_with_profile(
     if memory.is_enabled():
         logger.info(f"Fetching history for: {user_profile.name}")
         history = memory.get_workout_history(user_profile.name, limit=5)
-        state["history"] = history
+        state["user_history"] = history
     else:
-        state["history"] = []
+        state["user_history"] = []
     
     state.update(orchestrator_node(state))
     state.update(cv_agent_node(state))

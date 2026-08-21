@@ -1,6 +1,9 @@
 """Safety guardrails for training recommendations."""
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # Maximum weekly volume caps by experience level (total sets)
 MAX_WEEKLY_VOLUME = {
@@ -22,6 +25,25 @@ MIN_REST_DAYS = {
     "advanced": 2,
     "elite": 1,
 }
+
+# Exercise categories that don't count toward training volume
+NON_VOLUME_CATEGORIES = {"warmup", "stretch", "cooldown"}
+
+
+def _counts_toward_volume(exercise: Any) -> bool:
+    """Check if an exercise counts toward weekly training volume."""
+    category = str(getattr(exercise, "category", "main")).lower()
+    return category not in NON_VOLUME_CATEGORIES
+
+
+def _weekly_training_sets(week: Any) -> int:
+    """Sum sets of volume-relevant (main/core) exercises for a week."""
+    return sum(
+        getattr(exercise, "sets", 0)
+        for workout in getattr(week, "workouts", [])
+        for exercise in getattr(workout, "exercises", [])
+        if _counts_toward_volume(exercise)
+    )
 
 
 def apply_safety_limits(program: Any, user_profile: Any) -> Any:
@@ -50,19 +72,39 @@ def apply_safety_limits(program: Any, user_profile: Any) -> Any:
     
     max_volume = MAX_WEEKLY_VOLUME.get(exp_level.lower(), 60)
     
-    # Check and cap weekly volume
+    # Check and cap weekly volume (warmup/cooldown/stretch excluded)
     for week in getattr(program, "weekly_schedules", []):
-        total_sets = 0
-        for workout in getattr(week, "workouts", []):
-            for exercise in getattr(workout, "exercises", []):
-                total_sets += getattr(exercise, "sets", 0)
+        total_sets = _weekly_training_sets(week)
         
         # If over limit, reduce proportionally
         if total_sets > max_volume:
             reduction_factor = max_volume / total_sets
             for workout in week.workouts:
                 for exercise in workout.exercises:
+                    if not _counts_toward_volume(exercise):
+                        continue
                     exercise.sets = max(1, int(exercise.sets * reduction_factor))
+            
+            # If still over cap (more exercises than min-1-set allows),
+            # trim exercises from the largest workouts until under cap
+            while _weekly_training_sets(week) > max_volume:
+                largest = max(
+                    (
+                        w for w in week.workouts
+                        if sum(1 for e in w.exercises if _counts_toward_volume(e)) > 1
+                    ),
+                    key=lambda w: len(w.exercises),
+                    default=None,
+                )
+                if largest is None:
+                    break  # only single-exercise workouts left; cannot trim further
+                removed = largest.exercises.pop()
+                logger.debug(f"Safety cap: removed exercise '{removed.name}'")
+        
+        logger.info(
+            f"Safety volume check: week {getattr(week, 'week_number', '?')} "
+            f"at {_weekly_training_sets(week)}/{max_volume} sets"
+        )
     
     # Check for injury-related exercises
     current_injuries = getattr(user_profile, "current_injuries", [])
@@ -75,12 +117,14 @@ def apply_safety_limits(program: Any, user_profile: Any) -> Any:
 def _apply_injury_modifications(program: Any, injuries: list[str]) -> Any:
     """Modify program based on current injuries."""
     
-    # Mapping of injury areas to exercises to avoid/modify
+    # Mapping of injury areas to exercise name fragments to avoid.
+    # Fragments are matched as substrings of the lowercased exercise name,
+    # so use base forms ("squat" catches "Barbell Squat", "Front Squat", ...).
     injury_cautions = {
         "lower back": ["deadlift", "barbell row", "good morning"],
-        "knee": ["deep squat", "leg extension", "jumping"],
+        "knee": ["squat", "leg extension", "jump", "lunge"],
         "shoulder": ["overhead press", "upright row", "behind neck"],
-        "wrist": ["barbell curl", "push-up"],
+        "wrist": ["barbell curl", "push-up", "push up"],
     }
     
     injury_lower = [i.lower() for i in injuries]

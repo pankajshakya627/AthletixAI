@@ -34,6 +34,10 @@ class Exercise(BaseModel):
     """Individual exercise in a workout."""
     
     name: str = Field(description="Exercise name")
+    category: str = Field(
+        default="main",
+        description="Workout section: 'warmup', 'main', 'core', or 'stretch'"
+    )
     exercise_type: ExerciseType = Field(
         default=ExerciseType.COMPOUND,
         description="Type of exercise"

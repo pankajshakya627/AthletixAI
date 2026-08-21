@@ -25,6 +25,12 @@ class AdaptationAction(str, Enum):
     CHANGE_EXERCISES = "change_exercises"
 
 
+# Single source of truth for the low-adherence trigger.
+# Used by both WeeklyFeedback.calculate_metrics() and the
+# adaptation agent's heuristics.
+LOW_ADHERENCE_THRESHOLD = 0.7
+
+
 class SessionFeedback(BaseModel):
     """Feedback from a single workout session."""
     
@@ -122,7 +128,7 @@ class WeeklyFeedback(BaseModel):
         self.average_energy = sum(s.energy_level for s in self.session_feedbacks) / len(self.session_feedbacks)
         
         # Determine if adjustment needed
-        if self.adherence_rate < 0.7:
+        if self.adherence_rate < LOW_ADHERENCE_THRESHOLD:
             self.needs_adjustment = True
             self.recommended_action = AdaptationAction.REDUCE_VOLUME
             self.adjustment_reason = "Low adherence - reducing volume to improve consistency"

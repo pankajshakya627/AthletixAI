@@ -312,7 +312,7 @@ with st.sidebar:
     with st.expander("➕ Create New Profile"):
         with st.form("create_profile_form"):
             new_name = st.text_input("Name")
-            new_age = st.number_input("Age", min_value=10, max_value=100, value=30)
+            new_age = st.number_input("Age", min_value=13, max_value=100, value=30)
             new_weight = st.number_input("Weight (kg)", min_value=30.0, value=70.0)
             new_height = st.number_input("Height (cm)", min_value=100.0, value=175.0)
             new_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
@@ -334,16 +334,23 @@ with st.sidebar:
                     "experience_level": new_exp.lower(),  # lowercase
                     "primary_goal": new_goal,
                     "medical_conditions": [],
-                    "injuries": [],
-                    "equipment_access": ["Gym"]
+                    "injury_history": [],
+                    "current_injuries": [],
+                    "equipment_available": ["Gym"]
                 }
+                
+                # Validate against the model BEFORE persisting anything
+                try:
+                    profile_obj = UserProfile(**new_profile_data)
+                except Exception as e:
+                    st.error(f"Invalid profile data: {e}")
+                    st.stop()
                 
                 with open(file_path, 'w') as f:
                     json.dump(new_profile_data, f, indent=4)
                 
                 # Cloud Sync
                 if memory.is_enabled():
-                    profile_obj = UserProfile(**new_profile_data)
                     memory.save_user_profile(profile_obj)
                     st.success(f"Profile synced to Cloud!")
                 

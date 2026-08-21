@@ -139,6 +139,9 @@ Wearable Metrics:
 Goals: {goals}
 Available Equipment: {equipment}
 
+Recent Workout History (use to adjust volume and progression):
+{history}
+
 CRITICAL REQUIREMENTS:
 1. Program must have MINIMUM 5 training days per week
 2. Each workout day must have AT LEAST 10-12 exercises

@@ -1,6 +1,7 @@
 """Coach Agent - Human-like coaching communication."""
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from src.state import FitnessState
@@ -98,7 +99,6 @@ def _format_todays_workout(program: Any) -> str:
     if not program:
         return "Rest day or custom workout"
     
-    # Get first workout from first week as example
     schedules = getattr(program, "weekly_schedules", [])
     if not schedules:
         return "Program being prepared"
@@ -108,7 +108,14 @@ def _format_todays_workout(program: Any) -> str:
     if not workouts:
         return "Rest day"
     
-    workout = workouts[0]
+    # Select the workout matching today's weekday (day_number 1=Monday),
+    # falling back to the first non-rest day
+    weekday = datetime.now().isoweekday()
+    workout = next(
+        (w for w in workouts if w.day_number == weekday and not w.is_rest_day),
+        next((w for w in workouts if not w.is_rest_day), workouts[0]),
+    )
+    
     exercises = getattr(workout, "exercises", [])
     
     exercise_list = []

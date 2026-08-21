@@ -182,7 +182,7 @@ def _parse_meal_analysis(data: dict, image_url: str) -> MealAnalysis:
             confidence=item_data.get("confidence", 0.8),
         ))
     
-    # Parse total macros
+    # Parse total macros (LLM-provided; used as fallback only)
     total_data = data.get("total_macros", {})
     total_macros = DailyMacros(
         protein_g=total_data.get("protein_g", 0),
@@ -191,7 +191,7 @@ def _parse_meal_analysis(data: dict, image_url: str) -> MealAnalysis:
         calories=total_data.get("calories", 0),
     )
     
-    return MealAnalysis(
+    meal = MealAnalysis(
         meal_type=meal_type,
         food_items=food_items,
         total_macros=total_macros,
@@ -200,3 +200,11 @@ def _parse_meal_analysis(data: dict, image_url: str) -> MealAnalysis:
         dietary_flags=data.get("dietary_flags", []),
         image_url=image_url if image_url.startswith("http") else None,
     )
+    
+    # Recompute totals from item-level data so the reported totals are
+    # arithmetically consistent (and fiber/sugar are not lost - the LLM
+    # schema omits them from total_macros but includes them per item).
+    if food_items:
+        meal.calculate_totals()
+    
+    return meal
