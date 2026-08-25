@@ -5,11 +5,22 @@ import logging
 from typing import Any
 
 from src.state import FitnessState
-from src.models.feedback import WeeklyFeedback, AdaptationAction, PerformanceTrend
+from src.models.feedback import (
+    WeeklyFeedback,
+    AdaptationAction,
+    PerformanceTrend,
+    LOW_ADHERENCE_THRESHOLD,
+)
 from src.utils.openai_client import get_structured_response
 from src.utils.prompts import get_prompt
 
 logger = logging.getLogger(__name__)
+
+# Maximum number of replan cycles per run. Prevents the
+# adaptation → planner loop from spinning until LangGraph's
+# recursion limit raises an exception (static feedback would
+# otherwise re-trigger the same adjustment forever).
+MAX_REPLAN_CYCLES = 2
 
 
 def adaptation_agent_node(state: FitnessState) -> dict[str, Any]:
@@ -127,7 +138,7 @@ def _analyze_and_decide(
             "reasoning": "High fatigue and poor recovery - initiating deload week",
         }
     
-    if adherence < 0.6:
+    if adherence < LOW_ADHERENCE_THRESHOLD:
         return {
             "needs_replan": True,
             "recommended_action": "reduce_volume",
@@ -182,7 +193,8 @@ def should_replan(state: FitnessState) -> bool:
     Conditional edge function for LangGraph.
     
     Determines if the graph should loop back to the planner
-    or proceed to end.
+    or proceed to end. Caps the loop at MAX_REPLAN_CYCLES so
+    repeated identical feedback cannot loop forever.
     
     Args:
         state: Current fitness state
@@ -190,4 +202,10 @@ def should_replan(state: FitnessState) -> bool:
     Returns:
         True if replanning is needed, False otherwise
     """
+    if state.get("replan_count", 0) >= MAX_REPLAN_CYCLES:
+        logger.warning(
+            f"Replan limit ({MAX_REPLAN_CYCLES}) reached - ending instead of looping"
+        )
+        return False
+    
     return state.get("needs_replan", False)

@@ -34,6 +34,10 @@ class Exercise(BaseModel):
     """Individual exercise in a workout."""
     
     name: str = Field(description="Exercise name")
+    category: str = Field(
+        default="main",
+        description="Workout section: 'warmup', 'main', 'core', or 'stretch'"
+    )
     exercise_type: ExerciseType = Field(
         default=ExerciseType.COMPOUND,
         description="Type of exercise"
@@ -65,6 +69,16 @@ class Exercise(BaseModel):
     notes: Optional[str] = Field(
         default=None,
         description="Additional exercise notes"
+    )
+    
+    # NEW: Detailed exercise information
+    description: Optional[str] = Field(
+        default=None,
+        description="Brief description of the exercise and what it targets"
+    )
+    steps: list[str] = Field(
+        default_factory=list,
+        description="Step-by-step instructions on how to perform the exercise"
     )
     
     # NEW: Educational resources from research agent

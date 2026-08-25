@@ -312,7 +312,7 @@ with st.sidebar:
     with st.expander("➕ Create New Profile"):
         with st.form("create_profile_form"):
             new_name = st.text_input("Name")
-            new_age = st.number_input("Age", min_value=10, max_value=100, value=30)
+            new_age = st.number_input("Age", min_value=13, max_value=100, value=30)
             new_weight = st.number_input("Weight (kg)", min_value=30.0, value=70.0)
             new_height = st.number_input("Height (cm)", min_value=100.0, value=175.0)
             new_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
@@ -334,16 +334,23 @@ with st.sidebar:
                     "experience_level": new_exp.lower(),  # lowercase
                     "primary_goal": new_goal,
                     "medical_conditions": [],
-                    "injuries": [],
-                    "equipment_access": ["Gym"]
+                    "injury_history": [],
+                    "current_injuries": [],
+                    "equipment_available": ["Gym"]
                 }
+                
+                # Validate against the model BEFORE persisting anything
+                try:
+                    profile_obj = UserProfile(**new_profile_data)
+                except Exception as e:
+                    st.error(f"Invalid profile data: {e}")
+                    st.stop()
                 
                 with open(file_path, 'w') as f:
                     json.dump(new_profile_data, f, indent=4)
                 
                 # Cloud Sync
                 if memory.is_enabled():
-                    profile_obj = UserProfile(**new_profile_data)
                     memory.save_user_profile(profile_obj)
                     st.success(f"Profile synced to Cloud!")
                 
@@ -502,40 +509,90 @@ else:
                     </div>
                     ''', unsafe_allow_html=True)
                     
-                    # Build HTML table
-                    table_html = '''
-                    <table class="styled-table">
-                        <thead>
-                            <tr>
-                                <th>Exercise</th>
-                                <th>Sets</th>
-                                <th>Reps</th>
-                                <th>📖 Tutorial</th>
-                                <th>🎬 Video</th>
-                                <th>🖼️ Visual</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                    '''
                     
-                    for ex in workout.exercises:
-                        tut_link = f'<a href="{ex.tutorial_url}" target="_blank">Tutorial</a>' if hasattr(ex, 'tutorial_url') and ex.tutorial_url else '-'
-                        vid_link = f'<a href="{ex.video_url}" target="_blank">Watch</a>' if hasattr(ex, 'video_url') and ex.video_url else '-'
-                        gif_link = f'<a href="{ex.gif_url}" target="_blank">View</a>' if hasattr(ex, 'gif_url') and ex.gif_url else '-'
+                    # =================================================================
+                    # WORKOUT EXERCISES - NATIVE STREAMLIT CARDS
+                    # Displays exercises with expandable detailed instructions
+                    # =================================================================
+                    
+                    for idx, ex in enumerate(workout.exercises, 1):
+                        # Exercise header with name, sets, reps
+                        col_name, col_sets, col_reps = st.columns([3, 1, 1])
+                        with col_name:
+                            st.markdown(f"### {idx}. {ex.name}")
+                        with col_sets:
+                            st.metric("Sets", ex.sets)
+                        with col_reps:
+                            st.metric("Reps", ex.reps)
                         
-                        table_html += f'''
-                            <tr>
-                                <td><strong>{ex.name}</strong></td>
-                                <td>{ex.sets}</td>
-                                <td>{ex.reps}</td>
-                                <td>{tut_link}</td>
-                                <td>{vid_link}</td>
-                                <td>{gif_link}</td>
-                            </tr>
-                        '''
-                    
-                    table_html += '</tbody></table>'
-                    st.markdown(table_html, unsafe_allow_html=True)
+                        # Expandable details section
+                        with st.expander("📖 View Instructions & Details"):
+                            # Description (show placeholder if missing)
+                            if hasattr(ex, 'description') and ex.description:
+                                st.markdown(f"**About this exercise:** {ex.description}")
+                            else:
+                                st.caption("_No description available. Generate a new program to see detailed instructions._")
+                            
+                            st.markdown("")
+                            
+                            # Step-by-step instructions (show placeholder if missing)
+                            st.markdown("**📋 How to Perform:**")
+                            if hasattr(ex, 'steps') and ex.steps:
+                                for step_idx, step in enumerate(ex.steps, 1):
+                                    st.markdown(f"{step_idx}. {step}")
+                            else:
+                                st.caption("_Step-by-step instructions will appear here when a new program is generated._")
+                            
+                            st.markdown("")
+                            
+                            # Breathing guide (show placeholder if missing)
+                            st.markdown("**💨 Breathing:**")
+                            if hasattr(ex, 'breathing_guide') and ex.breathing_guide:
+                                st.markdown(f"{ex.breathing_guide}")
+                            else:
+                                st.caption("_Breathing guide will appear here when a new program is generated._")
+                            
+                            st.markdown("")
+                            
+                            # Technique cues - ALWAYS show if available
+                            if ex.technique_cues:
+                                st.markdown("**✅ Key Technique Cues:**")
+                                for cue in ex.technique_cues:
+                                    st.markdown(f"• {cue}")
+                                st.markdown("")
+                            
+                            # Common mistakes (from research agent)
+                            if hasattr(ex, 'common_mistakes') and ex.common_mistakes:
+                                st.markdown("**⚠️ Common Mistakes to Avoid:**")
+                                for mistake in ex.common_mistakes:
+                                    st.markdown(f"• {mistake}")
+                                st.markdown("")
+                            
+                            # Resource links
+                            st.markdown("**🔗 External Resources:**")
+                            link_cols = st.columns(3)
+                            has_links = False
+                            
+                            if hasattr(ex, 'tutorial_url') and ex.tutorial_url:
+                                with link_cols[0]:
+                                    st.markdown(f"[📚 Tutorial Article]({ex.tutorial_url})")
+                                has_links = True
+                            if hasattr(ex, 'video_url') and ex.video_url:
+                                with link_cols[1]:
+                                    st.markdown(f"[🎬 Video Demo]({ex.video_url})")
+                                has_links = True
+                            if hasattr(ex, 'gif_url') and ex.gif_url:
+                                with link_cols[2]:
+                                    st.markdown(f"[🖼️ GIF Animation]({ex.gif_url})")
+                                has_links = True
+                            
+                            if not has_links:
+                                st.caption("_No external resources available for this exercise._")
+                        
+                        # Visual separator between exercises
+                        if idx < len(workout.exercises):
+                            st.divider()
+
 
     # --- TAB 3: SCHEDULE ---
     with tab_schedule:

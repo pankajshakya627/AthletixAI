@@ -1,0 +1,15 @@
+{
+    "user_id": "u_mahi",
+    "name": "Mahi",
+    "age": 22,
+    "weight_kg": 65.0,
+    "height_cm": 166.0,
+    "gender": "male",
+    "experience_level": "intermediate",
+    "primary_goal": "General Fitness",
+    "medical_conditions": [],
+    "injuries": [],
+    "equipment_access": [
+        "Gym"
+    ]
+}

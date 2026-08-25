@@ -118,14 +118,40 @@ class UserMemory:
     
     def save_training_program(
         self,
-        user_id: str,
+        user_name_or_id: str,
         program: TrainingProgram
     ) -> Optional[str]:
-        """Save training program to Supabase."""
+        """
+        Save training program to Supabase.
+        
+        Args:
+            user_name_or_id: Either the user's name (string) or their UUID.
+                             If a name is passed, we lookup the UUID first.
+            program: The TrainingProgram to save.
+        
+        Returns:
+            The program_id if successful, None otherwise.
+        """
         if not self.is_enabled():
             return None
         
         try:
+            # Lookup user_id by name if it doesn't look like a UUID
+            user_id = user_name_or_id
+            if not self._is_valid_uuid(user_name_or_id):
+                # Lookup by name
+                result = self.supabase.table("users")\
+                    .select("user_id")\
+                    .eq("name", user_name_or_id)\
+                    .limit(1)\
+                    .execute()
+                
+                if not result.data:
+                    logger.warning(f"User '{user_name_or_id}' not found in database. Skipping save.")
+                    return None
+                
+                user_id = result.data[0]["user_id"]
+            
             program_data = {
                 "user_id": user_id,
                 "program_name": program.program_name,
@@ -143,6 +169,15 @@ class UserMemory:
         except Exception as e:
             logger.error(f"Error saving training program: {e}")
             return None
+    
+    def _is_valid_uuid(self, value: str) -> bool:
+        """Check if a string is a valid UUID."""
+        try:
+            import uuid
+            uuid.UUID(str(value))
+            return True
+        except (ValueError, AttributeError):
+            return False
     
     def get_active_program(self, user_id: str) -> Optional[TrainingProgram]:
         """Get user's active training program."""
@@ -245,14 +280,35 @@ class UserMemory:
     
     def get_workout_history(
         self,
-        user_id: str,
+        user_name_or_id: str,
         limit: int = 10
     ) -> list[dict]:
-        """Get user's recent workout history."""
+        """Get user's recent workout history.
+        
+        Args:
+            user_name_or_id: Either the user's name (string) or their UUID.
+                             If a name is passed, we lookup the UUID first.
+            limit: Maximum number of workouts to return.
+        """
         if not self.is_enabled():
             return []
         
         try:
+            # Resolve user_id by name if it doesn't look like a UUID
+            user_id = user_name_or_id
+            if not self._is_valid_uuid(user_name_or_id):
+                result = self.supabase.table("users")\
+                    .select("user_id")\
+                    .eq("name", user_name_or_id)\
+                    .limit(1)\
+                    .execute()
+                
+                if not result.data:
+                    logger.warning(f"User '{user_name_or_id}' not found in database. No history.")
+                    return []
+                
+                user_id = result.data[0]["user_id"]
+            
             result = self.supabase.table("workout_history")\
                 .select("*")\
                 .eq("user_id", user_id)\

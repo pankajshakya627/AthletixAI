@@ -17,6 +17,7 @@ from src.models.program import (
 )
 from src.utils.openai_client import get_structured_response
 from src.utils.prompts import get_prompt
+from src.safety.guardrails import apply_safety_limits
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +84,15 @@ def planner_agent_node(state: FitnessState) -> dict[str, Any]:
     if needs_replan and existing_program:
         logger.info("Planner Agent: Adapting existing program based on feedback")
         program = _adapt_program(existing_program, state)
+        updates["replan_count"] = state.get("replan_count", 0) + 1
     else:
         logger.info("Planner Agent: Creating new program")
         program = _create_new_program(state)
     
     # NOTE: Enrichment with research URLs now happens in research_agent (runs after planner)
+    
+    # Enforce safety limits (volume caps, injury-aware filtering)
+    program = apply_safety_limits(program, user_profile)
     
     updates["program"] = program
     updates["needs_replan"] = False  # Reset the flag
@@ -185,6 +190,7 @@ def _create_new_program(state: FitnessState) -> TrainingProgram:
     profile_str = _format_profile(user_profile)
     movement_str = _format_assessment(movement)
     wearable_str = _format_wearable(wearable)
+    history_str = _format_history(state.get("user_history"))
     
     goals_str = f"Primary: {getattr(goals, 'primary_goal', 'general_fitness')}"
     equipment = getattr(user_profile, "equipment_available", [])
@@ -201,6 +207,7 @@ def _create_new_program(state: FitnessState) -> TrainingProgram:
         intensity_modifier=intensity_mod,
         program_length=4,
         days_per_week=days_per_week,
+        history=history_str,
     )
     
     try:
@@ -240,17 +247,66 @@ def _adapt_program(existing: TrainingProgram, state: FitnessState) -> TrainingPr
         elif action_value == "deload":
             # Reduce intensity significantly
             return _modify_volume(existing, multiplier=0.5)
+        elif action_value == "reduce_intensity":
+            return _modify_intensity(existing, increase=False)
+        elif action_value == "increase_intensity":
+            return _modify_intensity(existing, increase=True)
+        elif action_value == "change_exercises":
+            return _swap_exercises(existing)
     
     return existing
 
 
 def _modify_volume(program: TrainingProgram, multiplier: float) -> TrainingProgram:
     """Modify program volume by a multiplier."""
+    import math
+    
     for week in program.weekly_schedules:
         for workout in week.workouts:
             for exercise in workout.exercises:
-                exercise.sets = max(1, int(exercise.sets * multiplier))
+                # Ceil for increases / floor for decreases so the change
+                # always takes effect even on low set counts
+                if multiplier >= 1:
+                    new_sets = math.ceil(exercise.sets * multiplier)
+                else:
+                    new_sets = math.floor(exercise.sets * multiplier)
+                exercise.sets = max(1, min(new_sets, 10))
     
+    return program
+
+
+def _modify_intensity(program: TrainingProgram, increase: bool) -> TrainingProgram:
+    """Adjust workout intensity via rest periods and intensity labels.
+    
+    Reducing intensity lengthens rest periods and lowers the intensity label;
+    increasing intensity shortens rest periods (progressive overload).
+    """
+    for week in program.weekly_schedules:
+        week.intensity_modifier = max(-50, min(20, week.intensity_modifier + (5 if increase else -5)))
+        for workout in week.workouts:
+            workout.intensity_level = "high" if increase else "moderate"
+            for exercise in workout.exercises:
+                if increase:
+                    exercise.rest_seconds = max(30, int(exercise.rest_seconds * 0.85))
+                else:
+                    exercise.rest_seconds = min(300, int(exercise.rest_seconds * 1.25) + 5)
+    
+    return program
+
+
+def _swap_exercises(program: TrainingProgram) -> TrainingProgram:
+    """Swap exercises for their listed alternatives where available."""
+    swapped = 0
+    for week in program.weekly_schedules:
+        for workout in week.workouts:
+            for exercise in workout.exercises:
+                if exercise.alternatives:
+                    old_name = exercise.name
+                    exercise.name = exercise.alternatives[0]
+                    exercise.alternatives = [old_name] + exercise.alternatives[1:]
+                    swapped += 1
+    
+    logger.info(f"Planner Agent: Swapped {swapped} exercises for alternatives")
     return program
 
 
@@ -265,11 +321,15 @@ def _parse_program(data: dict) -> TrainingProgram:
             for ex_data in day_data.get("exercises", []):
                 exercises.append(Exercise(
                     name=ex_data.get("name", "Unknown"),
+                    category=ex_data.get("category", "main"),
                     sets=ex_data.get("sets", 3),
                     reps=str(ex_data.get("reps", "8-12")),
                     rest_seconds=ex_data.get("rest_seconds", ex_data.get("rest", 90)),
                     weight_suggestion=ex_data.get("weight_suggestion"),
                     technique_cues=ex_data.get("technique_cues", ex_data.get("cues", [])),
+                    description=ex_data.get("description"),
+                    steps=ex_data.get("steps", []),
+                    breathing_guide=ex_data.get("breathing_guide"),
                 ))
             
             workouts.append(DailyWorkout(
@@ -277,7 +337,9 @@ def _parse_program(data: dict) -> TrainingProgram:
                 day_name=day_data.get("day_name", day_data.get("name", "Workout")),
                 focus=day_data.get("focus", "General"),
                 exercises=exercises,
-                estimated_duration_minutes=day_data.get("duration", 60),
+                estimated_duration_minutes=day_data.get(
+                    "estimated_duration_minutes", day_data.get("duration", 60)
+                ),
                 is_rest_day=day_data.get("is_rest_day", False),
             ))
         
@@ -329,6 +391,25 @@ def _create_default_program(user_profile: Any, goals: Any) -> TrainingProgram:
     
     # Use the new template-based program builder
     return build_program_from_template(exp_level, user_name)
+
+
+def _format_history(history: Any) -> str:
+    """Format recent workout history for prompt grounding."""
+    if not history:
+        return "No previous workout history available (new user)"
+    
+    lines = []
+    for entry in history[:5]:
+        date = entry.get("workout_date", "unknown date")
+        exercises = entry.get("exercises_completed") or []
+        fatigue = entry.get("fatigue_level", "n/a")
+        performance = entry.get("performance_rating", "n/a")
+        lines.append(
+            f"- {date}: {len(exercises)} exercises, "
+            f"fatigue {fatigue}/10, performance {performance}/10"
+        )
+    
+    return "\n".join(lines)
 
 
 def _format_profile(profile: Any) -> str:

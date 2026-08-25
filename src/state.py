@@ -41,6 +41,7 @@ class FitnessState(TypedDict, total=False):
     # Feedback & Adaptation
     weekly_feedback: Optional[WeeklyFeedback]
     needs_replan: bool
+    replan_count: int  # Number of replan cycles already executed (loop guard)
     
     # Messages for conversational context
     messages: Annotated[list[BaseMessage], add_messages]
@@ -89,6 +90,7 @@ def create_initial_state(
         program=None,
         weekly_feedback=None,
         needs_replan=False,
+        replan_count=0,
         messages=[],
         current_agent="orchestrator",
         video_frames=None,

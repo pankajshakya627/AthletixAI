@@ -414,7 +414,7 @@ def display_program_only(state: dict) -> None:
                     
                     # Print first line with exercise info
                     res_line = resources[0] if resources else ""
-                    # Truncate resource if too long for one line, technically we should wrap but simple crop is safer for table alignment
+                    # Truncate resource if too long for one line
                     if len(res_line) > 40: res_line = res_line[:37] + "..."
                     
                     print("    " + f"| {ex.name[:30]:<30} | {str(ex.sets):<6} | {str(ex.reps)[:12]:<12} | {res_line:<40} |")
@@ -424,6 +424,19 @@ def display_program_only(state: dict) -> None:
                         res_line = resources[i]
                         if len(res_line) > 40: res_line = res_line[:37] + "..."
                         print("    " + f"| {'':<30} | {'':<6} | {'':<12} | {res_line:<40} |")
+                    
+                    # Print detailed info if available
+                    if hasattr(ex, 'description') and ex.description:
+                        print("    " + f"| {'  Description: ' + ex.description[:80]:<30} | {'':<6} | {'':<12} | {'':<40} |")
+                    
+                    if hasattr(ex, 'breathing_guide') and ex.breathing_guide:
+                        print("    " + f"| {'  Breathing: ' + ex.breathing_guide[:80]:<30} | {'':<6} | {'':<12} | {'':<40} |")
+                    
+                    if hasattr(ex, 'steps') and ex.steps:
+                        print("    " + f"| {'  Steps:':<30} | {'':<6} | {'':<12} | {'':<40} |")
+                        for step_idx, step in enumerate(ex.steps[:3], 1):  # Limit to 3 steps for CLI
+                            step_text = f"    {step_idx}. {step[:70]}"
+                            print("    " + f"| {step_text:<30} | {'':<6} | {'':<12} | {'':<40} |")
                     
                     # Row separator
                     print("    " + "+" + "-"*32 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*42 + "+")
@@ -461,9 +474,9 @@ def run_program_with_profile(
     if memory.is_enabled():
         logger.info(f"Fetching history for: {user_profile.name}")
         history = memory.get_workout_history(user_profile.name, limit=5)
-        state["history"] = history
+        state["user_history"] = history
     else:
-        state["history"] = []
+        state["user_history"] = []
     
     state.update(orchestrator_node(state))
     state.update(cv_agent_node(state))

@@ -52,7 +52,7 @@ def build_program_from_template(
         
         # Warmup exercises
         for ex_def in sections.get("warmup", []):
-            exercises.append(_create_exercise(ex_def, is_warmup=True))
+            exercises.append(_create_exercise(ex_def, is_warmup=True, category="warmup"))
         
         # Main exercises
         for ex_def in sections.get("main", []):
@@ -60,7 +60,7 @@ def build_program_from_template(
         
         # Cooldown exercises
         for ex_def in sections.get("cooldown", []):
-            exercises.append(_create_exercise(ex_def, is_warmup=True))
+            exercises.append(_create_exercise(ex_def, is_warmup=True, category="stretch"))
         
         workouts.append(DailyWorkout(
             day_number=i + 1,
@@ -90,13 +90,25 @@ def build_program_from_template(
     )
 
 
-def _create_exercise(ex_def: dict, is_warmup: bool = False) -> Exercise:
-    """Create an Exercise object from template definition."""
+def _create_exercise(ex_def: dict, is_warmup: bool = False, category: str = "main") -> Exercise:
+    """Create an Exercise object from template definition, enriched with details."""
+    from src.data.exercise_details import get_exercise_details
+    
+    name = ex_def.get("name", "Unknown Exercise")
+    
+    # Look up detailed instructions for this exercise
+    details = get_exercise_details(name)
+    
     return Exercise(
-        name=ex_def.get("name", "Unknown Exercise"),
+        name=name,
+        category=category,
         sets=ex_def.get("sets", 3),
         reps=str(ex_def.get("reps", "10")),
         rest_seconds=0 if is_warmup else 60,
         technique_cues=[],
         alternatives=[ex_def.get("alternative")] if ex_def.get("alternative") else [],
+        description=details.get("description"),
+        steps=details.get("steps", []),
+        breathing_guide=details.get("breathing_guide"),
     )
+
